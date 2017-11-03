@@ -19,8 +19,10 @@
 #define NOTIFYPAUSE 200
 #define SERVOINIT 15
 #define SERVOSTEP 25
-#define SERVOPAUSE 200
+#define SERVOPAUSE 400
 #define DUALSPEED 50
+#define FORWARD 1
+#define BACKWARD -1
 
 // MD25 I2C codes
 #define MD25ADDR 0x58
@@ -117,19 +119,19 @@ class Leg
 {
   public:
     // Should we drop an M&M?, leg finished successfully?
-    bool drop, success;
+    bool drop, direction;
     
     // Virtual function that will be called to run this leg of the course.
     virtual void run();
 
-    // turn on the LED and sound the buzzer
-    void notifyOn() {
+    // perform actions at waypoint, including dropping M&M if needed
+    void action() {
         digitalWrite(LEDPIN, HIGH);
         tone(PIEZOPIN, PIEZOFREQ);
-    }
+        
+        if (this->drop) { this->dispense(); }
+        else { delay(NOTIFYPAUSE); }
 
-    // turn off LED and sound buzzer
-    void notifyOff() {
         digitalWrite(LEDPIN, LOW);
         noTone(PIEZOPIN);
     }
@@ -142,8 +144,50 @@ class Leg
     }
 
     // rotate by the given angle (+ve clockwise), returning the actual angle rotated
-    int rotate(int d) {
-        return d;
+    int rotate(int t) {
+
+        // find distance needed to rotate
+        int dist = 2 * PI * WHEELDIST * (t / FULLCIRCLE);
+
+        // speeds of each wheel
+        signed char leftWheel, rightWheel;
+
+        // set speeds of each wheel depending on direction (+ve -> left goes forwards)
+        if (t > 0) {
+            leftWheel = DUALSPEED;
+            rightWheel = - DUALSPEED;
+        } else {
+            leftWheel = - DUALSPEED;
+            rightWheel = - DUALSPEED;
+        }
+
+        while (individualDistance(ENCODELEFT) <= dist && individualDistance(ENCODERIGHT) <= dist) {
+            // set wheels to spin at different speeds
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(MODE);
+            Wire.write(MODESEPERATE);
+            Wire.endTransmission();
+
+            // set the acceleration mode to fast
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(ACCEL);
+            Wire.write(ACCELDEFAULT);
+            Wire.endTransmission();
+
+            // Set left wheel speed
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(SPEEDLEFT);
+            Wire.write(leftWheel);
+            Wire.endTransmission();
+
+            // set right wheel speed
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(SPEEDRIGHT);
+            Wire.write(rightWheel);
+            Wire.endTransmission();
+        }
+
+        return individualDistance(ENCODELEFT);
     }
 };
 
@@ -159,8 +203,9 @@ class Line: public Leg {
     int dist, endRot;
 
     // constructor
-    Line(int d, int r, bool m) {
+    Line(int d, int dir, int r, bool m) {
         this->dist = d;
+        this->direction = dir;
         this->endRot = r;
         this->drop = m;
         this->loopCount = 0;
@@ -196,15 +241,8 @@ class Line: public Leg {
         }
         this->loopCount = 0;
 
-        // blink the led and sound buzzer to show we've reached the waypoint
-        this->notifyOn();
-
-        // drop the M&M if we should, if not delay for NOTIFYPAUSE to keep the LED on for a bit
-        if (this->drop) { this->dispense(); }
-        else { delay(NOTIFYPAUSE); }
-
-        // turn off light and buzzer
-        this->notifyOff();
+        // blink light, sound buzzer, and drop M&M if needed
+        this->action();
     }
 
     // move the wheels the desired distance, and return the actual distance driven
@@ -225,7 +263,7 @@ class Line: public Leg {
             // set the speed
             Wire.beginTransmission(MD25ADDR);
             Wire.write(SPEEDLEFT);
-            Wire.write(DUALSPEED);
+            Wire.write(this->direction * DUALSPEED);
             Wire.endTransmission();
         }
 
@@ -240,15 +278,16 @@ class Line: public Leg {
  */
 class Circle: public Leg {
     // loop counter to ensure we don't get stuck in a loop, distance the outer wheel has to rotate
-    int loopCount, outerDist, innerDist;
+    int loopCount, direction, outerDist, innerDist;
   public:
     // radius of the circle, angular distance to travel, final rotation for next leg
     int radius, theta, endRot;
 
     // constructor
-    Circle(int r, int t, int eR, bool m) {
+    Circle(int r, int t, int dir, int eR, bool m) {
         this->radius = r;
         this->theta = t;
+        this->direction = dir;
         this->endRot = eR;
         this->drop = m;
         this->loopCount = 0;
@@ -262,7 +301,64 @@ class Circle: public Leg {
 
     // implement the run function
     void run() {
-        
+
+        // drive round in a circle
+        this->drive();
+
+        // rotate to start of next leg
+        this->rotate(endRot);
+
+        // perform any actions needed
+        this->action();
+    }
+
+    int drive() {
+        char innerWheel, outerWheel, innerSpeed, outerSpeed;
+
+        // if we're going forward, the left wheel is on the inside, else its the outside wheel
+        if (this->direction == FORWARD) {
+            innerWheel = ENCODELEFT;
+            outerWheel = ENCODERIGHT;
+            innerSpeed = SPEEDLEFT;
+            outerSpeed = SPEEDRIGHT;
+        } else {
+            innerWheel = ENCODERIGHT;
+            outerWheel = ENCODELEFT;
+            innerSpeed = SPEEDRIGHT;
+            outerSpeed = SPEEDLEFT;
+        }
+
+        // angular velocity from dual speed, with direction
+        int omega = this->direction * (int)(DUALSPEED / this->radius);
+
+        // loop through driving until one of the distances is over it's limit
+        while (individualDistance(innerWheel) <= this->innerDist && individualDistance(outerWheel) <= this->outerDist) {
+            // Set wheels to spin at different rates
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(MODE);
+            Wire.write(MODESEPERATE);
+            Wire.endTransmission();
+
+            // set the acceleration mode to fast
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(ACCEL);
+            Wire.write(ACCELDEFAULT);
+            Wire.endTransmission();
+
+            // Set outer wheel speed
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(outerSpeed);
+            Wire.write((this->radius + WHEELDIST) * omega);
+            Wire.endTransmission();
+
+            // set inner wheel speed
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(innerSpeed);
+            Wire.write((this->radius - WHEELDIST) * omega);
+            Wire.endTransmission();
+        }
+
+        return averageDistance();
     }
 };
 
@@ -280,15 +376,62 @@ void setup()
     ServoPosition = SERVOINIT;
     servo.write(ServoPosition);
 
-    // delay before starting test sequence;
-    delay(3000);
+    // setup I2C for MD25
+    Wire.begin();
 
-    bool dropPoints[] = {false, true, false, true, false, true, false, true, false, true, false, false, false};
+    // delay before starting test sequence;
+    delay(1000);
+
+    // create the pointer pointer for storing the legs of the path
+    Leg** legs = new Leg*[13];
+
+    /*
+     * = THE LEG CODE =
+     * Each leg represents a part of the course, with the following parameters
+     *      Line - Distance, Direction, Angle to turn at end, drop M&M
+     *    Circle - Radius, angle to move through, direction, angle to turn at end, drop M&M 
+     */
+    legs[0] = new Line(428, FORWARD, 0, true);
+    legs[1] = new Line(504, FORWARD,-37, false);
+    legs[2] = new Circle(180, 270, BACKWARD, 90, true);
+    legs[3] = new Line(180, FORWARD, -40, false);
+    legs[4] = new Line(622, BACKWARD,50, true);
+    legs[5] = new Line(400, BACKWARD,-90, false);
+    legs[6] = new Line(400, FORWARD, 90, true);
+    legs[7] = new Line(400, FORWARD, 90, false);
+    legs[8] = new Line(660, FORWARD, 90, true);
+    legs[9] = new Circle(260, 90, FORWARD, -90, false);
+    legs[10] = new Line(500, FORWARD, 90, false);
+    legs[11] = new Line(260, FORWARD, 90, false);
+    legs[12] = new Line(340, FORWARD, 143, false);
+
+
+    // TESTING - loop through legs and run their action
     for (int i = 0; i < 13; i++) {
-        Line testLine = Line(100, 10, dropPoints[i]);
-        testLine.run();
+        legs[i]->action();
         delay(1000);
     }
+
+    finished();
+
+}
+
+// just a bit of fun
+void finished() {
+    tone(9,660,100);
+    delay(150);
+    tone(9,660,100);
+    delay(300);
+    tone(9,660,100);
+    delay(300);
+    tone(9,510,100);
+    delay(100);
+    tone(9,660,100);
+    delay(300);
+    tone(9,770,100);
+    delay(550);
+    tone(9,380,100);
+    delay(575);
 }
 
 void loop()
