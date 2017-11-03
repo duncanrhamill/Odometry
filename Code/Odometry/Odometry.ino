@@ -2,6 +2,8 @@
  *      Odometry Task - Aero 2 Group 2
  * 
  *          Code written by Duncan R Hamill - 28262174
+ * 
+ *          All distances in mm, all angles in degrees
  */
 
 // includes
@@ -18,12 +20,14 @@
 #define SERVOINIT 15
 #define SERVOSTEP 25
 #define SERVOPAUSE 200
+#define DUALSPEED 50
 
 // MD25 I2C codes
-#define SPEED1 0x00
-#define SPEED2 0x01
-#define ENCODE1A 0x02
-#define ENCODE2A 0x06
+#define MD25ADDR 0x58
+#define SPEEDLEFT 0x00
+#define SPEEDRIGHT 0x01
+#define ENCODELEFT 0x02
+#define ENCODERIGHT 0x06
 #define VOLTS 0x0A
 #define MOTOR1I 0x0B
 #define MOTOR2I 0x0C
@@ -31,14 +35,83 @@
 #define MODE 0x0F
 #define CMD 0x10
 
+// MD25 command codes
+#define CLEARENCODERREGISTERS 0x20
+
+// MD25 acceleration modes
+#define ACCELDEFAULT 5
+
+// MD25 modes
+#define MODEDUAL 3
+#define MODESEPERATE 1
+
 // pin definitions
 #define LEDPIN 8
 #define PIEZOPIN 9
 #define SERVOPIN 10
 
+// Servo global vars
 Servo servo;
 int ServoPosition;
 
+// MD25 global vars
+int Mode = 2;
+
+
+/*
+ *  Encoder interaction -------------------------------------------------------
+ */
+
+// find the average distance travelled
+int averageDistance() {
+    // get individual wheel distances
+    int distLeft = individualDistance(ENCODELEFT);
+    int distRight = individualDistance(ENCODERIGHT);
+
+    // return the average
+    return (int)(distLeft + distRight / 2);
+}
+
+// find distance left wheel has moved
+int individualDistance(char side) {
+    // set MD25 to send the encoder for left wheel
+    Wire.beginTransmission(MD25ADDR);
+    Wire.write(side);
+    Wire.endTransmission();
+
+    // request 4 bytes from the MD25
+    Wire.requestFrom(MD25ADDR, 4);
+
+    // the raw click value from the encoder
+    long clicks;
+
+    // wait for first 4 bytes back
+    while (Wire.available() < 4)
+
+    // get all bytes of the click var
+    clicks = Wire.read();
+    for (int i = 0; i < 3; i++) {
+        clicks <<= 8;
+        clicks += Wire.read();
+    }
+
+    // delay to ensure data is correct
+    delay(5);
+
+    // return a value in 
+    return (int)(clicks * 0.009);
+}
+
+// reset distance encoders between legs
+void resetEncoders() {
+    Wire.beginTransmission(MD25ADDR);
+    Wire.write(CMD);
+    Wire.write(CLEARENCODERREGISTERS);
+    Wire.endTransmission();
+    delay(10);
+}
+
+// ----------------------------------------------------------------------------
 
 /*
  *  Base leg class, contains run method that is implamented by the Line and Cirlce classes
@@ -75,10 +148,6 @@ class Leg
     int rotate(int d) {
         return d;
     }
-
-    int distanceLeft() {
-        
-    }
 };
 
 
@@ -114,6 +183,7 @@ class Line: public Leg {
             driven = this->drive(shortfall);
             shortfall -= driven;
             this->loopCount++;
+            resetEncoders();
         } 
         this->loopCount = 0;
 
@@ -136,12 +206,34 @@ class Line: public Leg {
         if (this->drop) { this->dispense(); }
         else { delay(NOTIFYPAUSE); }
 
+        // turn off light and buzzer
         this->notifyOff();
     }
 
     // move the wheels the desired distance, and return the actual distance driven
     int drive(int d) {
-        return d;
+        while(averageDistance() <= d) {
+            // Set both wheels to spin at the same rate
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(MODE);
+            Wire.write(MODEDUAL);
+            Wire.endTransmission();
+
+            // set the acceleration mode to fast
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(ACCEL);
+            Wire.write(ACCELDEFAULT);
+            Wire.endTransmission();
+
+            // set the speed
+            Wire.beginTransmission(MD25ADDR);
+            Wire.write(SPEEDLEFT);
+            Wire.write(DUALSPEED);
+            Wire.endTransmission();
+        }
+
+        // return the read distance
+        return averageDistance();
     }
 };
 
@@ -177,14 +269,21 @@ class Circle: public Leg {
     }
 };
 
+/*
+ *  Arduino logic -------------------------------------------------------------
+ */
 
 void setup()
 {
+    // Set LED pin mode
     pinMode(LEDPIN, OUTPUT);
 
+    // setup servo
     servo.attach(SERVOPIN);
     ServoPosition = SERVOINIT;
     servo.write(ServoPosition);
+
+    // delay before starting test sequence;
     delay(3000);
 
     bool dropPoints[] = {false, true, false, true, false, true, false, true, false, true, false, false, false};
