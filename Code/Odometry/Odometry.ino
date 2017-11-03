@@ -54,9 +54,6 @@
 Servo servo;
 int ServoPosition;
 
-// MD25 global vars
-int Mode = 2;
-
 
 /*
  *  Encoder interaction -------------------------------------------------------
@@ -74,7 +71,7 @@ int averageDistance() {
 
 // find distance left wheel has moved
 int individualDistance(char side) {
-    // set MD25 to send the encoder for left wheel
+    // set MD25 to send the encoder for the given side
     Wire.beginTransmission(MD25ADDR);
     Wire.write(side);
     Wire.endTransmission();
@@ -98,7 +95,7 @@ int individualDistance(char side) {
     // delay to ensure data is correct
     delay(5);
 
-    // return a value in 
+    // return a value in mm
     return (int)(clicks * 0.009);
 }
 
