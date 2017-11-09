@@ -11,46 +11,46 @@
 #include <Servo.h>
 
 // constant definitions
-#define MAXLOOPCOUNT 5
-#define WHEELDIST 40
-#define FULLCIRCLE 360
-#define PI 3.14159
-#define PIEZOFREQ 1000
-#define NOTIFYPAUSE 200
-#define SERVOINIT 15
-#define SERVOSTEP 25
-#define SERVOPAUSE 400
-#define DUALSPEED 50
-#define FORWARD 1
-#define BACKWARD -1
+#define MAXLOOPCOUNT 5          // maximum times to loop while correcting steer/drive
+#define WHEELDIST 40            // distance between centre of robot and centre of wheels
+#define PI 3.14159              // pi
+#define PIEZOFREQ 1000          // frequency to sound the buzzer at
+#define NOTIFYPAUSE 200         // time to sound buzzer and flash light if not dropping M&M
+#define SERVOINIT 0             // initial angle for servo to sit at (the empty hole)
+#define SERVOSTEP 36            // angle to rotate servo by in order to move to next hole
+#define SERVOPAUSE 400          // time to wait to ensure M&M drops cleanly
+#define DUALSPEED 50            // speed of the motors in dual mode
+#define FORWARD 1               // multiplier to move forward
+#define BACKWARD -1             // backwards multiplier
+#define LINEARTOL 2             // linear tolerance for accuracy in straight line
+#define ANGULARTOL 2
+#define CLICKSTOMM 0.093        // conversion factor from clicks to mm
 
 // MD25 I2C codes
-#define MD25ADDR 0x58
-#define SPEEDLEFT 0x00
-#define SPEEDRIGHT 0x01
-#define ENCODELEFT 0x02
-#define ENCODERIGHT 0x06
-#define VOLTS 0x0A
-#define MOTOR1I 0x0B
-#define MOTOR2I 0x0C
-#define ACCEL 0x0E
-#define MODE 0x0F
-#define CMD 0x10
+#define MD25ADDR 0x58           // I2C MD25 address
+#define SPEEDLEFT 0x00          // MD25 register for speed #1 (left)
+#define SPEEDRIGHT 0x01         //   "      "       "      #2 (right)
+#define ENCODELEFT 0x02         // encoder address left
+#define ENCODERIGHT 0x06        // "        "      right
+#define ACCEL 0x0E              // Acceleration encoder
+#define MODE 0x0F               // mode register
+#define CMD 0x10                // command register
 
 // MD25 command codes
-#define CLEARENCODERREGISTERS 0x20
+#define CLEARENCODERREGISTERS 0x20  // code to clear encoder values
 
 // MD25 acceleration modes
-#define ACCELDEFAULT 5
+#define ACCELDEFAULT 5          // acceleration mode
 
 // MD25 modes
-#define MODEDUAL 3
-#define MODESEPERATE 1
+#define MODEUNSIGNEDDUAL 2
+#define MODEDUAL 3              // dual motor mode, all off speed 1
+#define MODESEPERATE 0          // seperate motor speeds
 
 // pin definitions
-#define LEDPIN 8
-#define PIEZOPIN 9
-#define SERVOPIN 10
+#define LEDPIN 8                // led pin
+#define PIEZOPIN 9              // buzzer spin
+#define SERVOPIN 10             // servo pin
 
 // Servo global vars
 Servo servo;
@@ -67,8 +67,11 @@ int averageDistance() {
     int distLeft = individualDistance(ENCODELEFT);
     int distRight = individualDistance(ENCODERIGHT);
 
+    distLeft = abs(distLeft);
+    distRight = abs(distRight);
+
     // return the average
-    return (int)(distLeft + distRight / 2);
+    return (int)((distLeft + distRight)/ 2);
 }
 
 // find distance left wheel has moved
@@ -81,24 +84,24 @@ int individualDistance(char side) {
     // request 4 bytes from the MD25
     Wire.requestFrom(MD25ADDR, 4);
 
-    // the raw click value from the encoder
-    long clicks;
-
     // wait for first 4 bytes back
-    while (Wire.available() < 4)
+    while (Wire.available() < 4);
 
     // get all bytes of the click var
-    clicks = Wire.read();
-    for (int i = 0; i < 3; i++) {
-        clicks <<= 8;
-        clicks += Wire.read();
-    }
+    long clicks = Wire.read();
+    clicks <<= 8;
+    clicks += Wire.read();
+    clicks <<= 8;
+    clicks += Wire.read();
+    clicks <<= 8;
+    clicks += Wire.read();
 
-    // delay to ensure data is correct
     delay(5);
 
+    int dist = clicks * CLICKSTOMM;
+    
     // return a value in mm
-    return (int)(clicks * 0.009);
+    return abs(dist);
 }
 
 // reset distance encoders between legs
@@ -107,7 +110,7 @@ void resetEncoders() {
     Wire.write(CMD);
     Wire.write(CLEARENCODERREGISTERS);
     Wire.endTransmission();
-    delay(10);
+    delay(50);
 }
 
 // ----------------------------------------------------------------------------
@@ -139,29 +142,38 @@ class Leg
     // dispense an M&M
     void dispense() {
         ServoPosition += SERVOSTEP;
+        if (ServoPosition >= 179) {
+            ServoPosition = 179;
+        }
         servo.write(ServoPosition);
         delay(SERVOPAUSE);
     }
 
     // rotate by the given angle (+ve clockwise), returning the actual angle rotated
     int rotate(int t) {
+        Serial.print("Rotate ");
+
+        if (t == 0) {
+            Serial.println("0");
+            return 0;
+        }
 
         // find distance needed to rotate
-        int dist = 2 * PI * WHEELDIST * (t / FULLCIRCLE);
+        int dist = (int)(2 * PI * WHEELDIST * ((float)abs(t) / (float)360));
 
         // speeds of each wheel
-        signed char leftWheel, rightWheel;
+        char leftWheel, rightWheel;
 
         // set speeds of each wheel depending on direction (+ve -> left goes forwards)
         if (t > 0) {
-            leftWheel = DUALSPEED;
-            rightWheel = - DUALSPEED;
+            leftWheel = 128 + DUALSPEED;
+            rightWheel = 128 - DUALSPEED;
         } else {
-            leftWheel = - DUALSPEED;
-            rightWheel = - DUALSPEED;
+            leftWheel = 128 - DUALSPEED;
+            rightWheel = 128 + DUALSPEED;
         }
 
-        while (individualDistance(ENCODELEFT) <= dist && individualDistance(ENCODERIGHT) <= dist) {
+        while (averageDistance() <= dist) {
             // set wheels to spin at different speeds
             Wire.beginTransmission(MD25ADDR);
             Wire.write(MODE);
@@ -187,7 +199,27 @@ class Leg
             Wire.endTransmission();
         }
 
-        return individualDistance(ENCODELEFT);
+        int avg = averageDistance();
+
+        // return the angle rotated
+        int ang = (int)((float)(360 * avg)/(float)(2 * PI * WHEELDIST));
+
+        resetEncoders();
+        this->stop();
+        return ang;
+    }
+
+    void stop() {
+        Wire.beginTransmission(MD25ADDR);
+        Wire.write(MODE);
+        Wire.write(MODEUNSIGNEDDUAL);
+        Wire.endTransmission();
+
+        Wire.beginTransmission(MD25ADDR);
+        Wire.write(SPEEDLEFT);
+        Wire.write(128);
+        Wire.endTransmission();
+        delay(50);
     }
 };
 
@@ -213,6 +245,7 @@ class Line: public Leg {
 
     // implement the run function
     void run() {
+       
         // run drive, get how far we actually drove
         int driven = this->drive(this->dist);
 
@@ -220,19 +253,22 @@ class Line: public Leg {
         int shortfall = this->dist - driven;
 
         // aim to get within 2mm of the target waypoint, without going over MAXLOOPCOUNT
-        while (abs(shortfall) > 2 && loopCount < MAXLOOPCOUNT) {
+        while (abs(shortfall) > LINEARTOL && loopCount < MAXLOOPCOUNT) {
             // if we aren't on target, drive the shortfall again, looping over to check we reached it
             driven = this->drive(shortfall);
+            this->stop();
             shortfall -= driven;
             this->loopCount++;
-            resetEncoders();
+            
         } 
         this->loopCount = 0;
 
         // now repeat this for rotation
         int rotated = this->rotate(this->endRot);
 
-        shortfall = this->endRot - rotated;
+        shortfall = abs(this->endRot) - rotated;
+
+        Serial.println(shortfall);
 
         while (abs(shortfall) > 2 && this->loopCount < MAXLOOPCOUNT) {
             rotated = this->rotate(shortfall);
@@ -247,11 +283,14 @@ class Line: public Leg {
 
     // move the wheels the desired distance, and return the actual distance driven
     int drive(int d) {
+        Serial.println("Line");
+        
         while(averageDistance() <= d) {
+            
             // Set both wheels to spin at the same rate
             Wire.beginTransmission(MD25ADDR);
             Wire.write(MODE);
-            Wire.write(MODEDUAL);
+            Wire.write(MODEUNSIGNEDDUAL);
             Wire.endTransmission();
 
             // set the acceleration mode to fast
@@ -263,12 +302,16 @@ class Line: public Leg {
             // set the speed
             Wire.beginTransmission(MD25ADDR);
             Wire.write(SPEEDLEFT);
-            Wire.write(this->direction * DUALSPEED);
+            Wire.write(128 + (this->direction * DUALSPEED));
             Wire.endTransmission();
         }
 
         // return the read distance
-        return averageDistance();
+        int avg = averageDistance();
+        resetEncoders();
+        this->stop();
+        delay(50);
+        return avg;
     }
 };
 
@@ -293,17 +336,19 @@ class Circle: public Leg {
         this->loopCount = 0;
         
         // compute the outerDist as 2*pi*(radius of circle + distance to outer wheel from center of robot)*(theta/360), and parse to int
-        this->outerDist = (int)(2 * PI * (this->radius + WHEELDIST) * (this->theta / FULLCIRCLE));
+        this->outerDist = (int)(2 * PI * (this->radius + WHEELDIST) * ((float)this->theta / 360));
         
         // similar procedure for innerDist, but subtract the wheel distance instead
-        this->innerDist = (int)(2 * PI * (this->radius - WHEELDIST) * (this->theta / FULLCIRCLE));
+        this->innerDist = (int)(2 * PI * (this->radius - WHEELDIST) * ((float)this->theta / 360));
     }
 
     // implement the run function
     void run() {
-
+        Serial.println("Circle");
         // drive round in a circle
-        this->drive();
+        int driven = this->drive();
+
+        Serial.println(driven);
 
         // rotate to start of next leg
         this->rotate(endRot);
@@ -329,7 +374,7 @@ class Circle: public Leg {
         }
 
         // angular velocity from dual speed, with direction
-        int omega = this->direction * (int)(DUALSPEED / this->radius);
+        float omega = this->direction * ((float)DUALSPEED / (float)this->radius);
 
         // loop through driving until one of the distances is over it's limit
         while (individualDistance(innerWheel) <= this->innerDist && individualDistance(outerWheel) <= this->outerDist) {
@@ -348,18 +393,22 @@ class Circle: public Leg {
             // Set outer wheel speed
             Wire.beginTransmission(MD25ADDR);
             Wire.write(outerSpeed);
-            Wire.write((this->radius + WHEELDIST) * omega);
+            Wire.write((int)((this->radius + WHEELDIST) * omega));
             Wire.endTransmission();
 
             // set inner wheel speed
             Wire.beginTransmission(MD25ADDR);
             Wire.write(innerSpeed);
-            Wire.write((this->radius - WHEELDIST) * omega);
+            Wire.write((int)((this->radius - WHEELDIST) * omega));
             Wire.endTransmission();
         }
 
-        return averageDistance();
+        int avgDist = averageDistance();
+        resetEncoders();
+        this->stop();
+        return avgDist;
     }
+    
 };
 
 /*
@@ -368,8 +417,11 @@ class Circle: public Leg {
 
 void setup()
 {
+    Serial.begin(9600);
+    
     // Set LED pin mode
     pinMode(LEDPIN, OUTPUT);
+    pinMode(13, OUTPUT);
 
     // setup servo
     servo.attach(SERVOPIN);
@@ -378,9 +430,14 @@ void setup()
 
     // setup I2C for MD25
     Wire.begin();
+    
+    // await power on
+    delay(100);
+
+    resetEncoders();
 
     // delay before starting test sequence;
-    delay(1000);
+    //delay(5000);
 
     // create the pointer pointer for storing the legs of the path
     Leg** legs = new Leg*[13];
@@ -405,14 +462,15 @@ void setup()
     legs[11] = new Line(260, FORWARD, 90, false);
     legs[12] = new Line(340, FORWARD, 143, false);
 
-
     // TESTING - loop through legs and run their action
     for (int i = 0; i < 13; i++) {
-        legs[i]->action();
-        delay(1000);
+        Serial.print("Running ");
+        Serial.println(i);
+        legs[i]->run();
     }
 
-    finished();
+    // turn on for event
+    //finished();
 
 }
 
@@ -434,7 +492,6 @@ void finished() {
     delay(575);
 }
 
-void loop()
-{
+void loop() {
     
 }
