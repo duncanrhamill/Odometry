@@ -2,6 +2,7 @@
  *      Odometry Task - Aero 2 Group 2
  * 
  *          Code written by Duncan R Hamill - 28262174
+ *          Tested & verified by Tom Griffiths - 28290771, Ali Hajizadah - 29053056, Robin Hannaford - , Felix Harris - 28611969
  * 
  *          All distances in mm, all angles in degrees
  */
@@ -12,7 +13,7 @@
 
 // constant definitions
 #define MAXLOOPCOUNT 5          // maximum times to loop while correcting steer/drive
-#define WHEELDIST 125            // distance between centre of robot and centre of wheels
+#define WHEELDIST 125           // distance between centre of robot and centre of wheels
 #define PI 3.14159              // pi
 #define PIEZOFREQ 1000          // frequency to sound the buzzer at
 #define NOTIFYPAUSE 200         // time to sound buzzer and flash light if not dropping M&M
@@ -67,6 +68,7 @@ int averageDistance() {
     int distLeft = individualDistance(ENCODELEFT);
     int distRight = individualDistance(ENCODERIGHT);
 
+    // find the absolute distance
     distLeft = abs(distLeft);
     distRight = abs(distRight);
 
@@ -129,22 +131,30 @@ class Leg
 
     // perform actions at waypoint, including dropping M&M if needed
     void action() {
+        // turn on LED and buzzer
         digitalWrite(LEDPIN, HIGH);
         tone(PIEZOPIN, PIEZOFREQ);
         
+        // if need to drop M&M, drop one, if not delay so we can see and hear buzzer
         if (this->drop) { this->dispense(); }
         else { delay(NOTIFYPAUSE); }
 
+        // turn off led & buzzer
         digitalWrite(LEDPIN, LOW);
         noTone(PIEZOPIN);
     }
 
     // dispense an M&M
     void dispense() {
+        // increase servo position
         ServoPosition += SERVOSTEP;
+
+        // make sure we don't accidentally run through all positions
         if (ServoPosition >= 179) {
             ServoPosition = 179;
         }
+        
+        // write the servo position and wait to ensure clean drop
         servo.write(ServoPosition);
         delay(SERVOPAUSE);
     }
@@ -162,6 +172,7 @@ class Leg
         // speeds of each wheel
         int leftWheel, rightWheel, rotateSpeed;
 
+        // if we're in correction mode rotate slower
         if (correction) {
             rotateSpeed = DUALSPEED * 0.1;
         } else {
@@ -184,7 +195,7 @@ class Leg
         Serial.print(" ");
         Serial.println((int)rightWheel);
         
-
+        // while we've not rotated less that the required distance
         while (averageDistance() <= dist) {
             Serial.println(averageDistance());
           
@@ -226,21 +237,25 @@ class Leg
 
     // stop the vehicle
     void stop() {
+        // allow both registers to be set to stop
         Wire.beginTransmission(MD25ADDR);
         Wire.write(MODE);
         Wire.write(MODESEPERATE);
         Wire.endTransmission();
 
+        // high acceleration mode
         Wire.beginTransmission(MD25ADDR);
         Wire.write(ACCEL);
         Wire.write(10);
         Wire.endTransmission();
 
+        // set left to stop
         Wire.beginTransmission(MD25ADDR);
         Wire.write(SPEEDLEFT);
         Wire.write(128);
         Wire.endTransmission();
         
+        // set right to stop
         Wire.beginTransmission(MD25ADDR);
         Wire.write(SPEEDRIGHT);
         Wire.write(128);
@@ -273,7 +288,7 @@ class Line: public Leg {
     void run() {
        
         // run drive, get how far we actually drove
-        int driven = this->drive(this->dist, false);
+        int driven = this->drive(this->direction * this->dist, false);
 
         // calculate distance left to drive
         int shortfall = this->dist - driven;
@@ -304,7 +319,14 @@ class Line: public Leg {
         
         while(averageDistance() <= abs(d)) {
             int spd;
-          
+
+            // if in a correction, go slowly for more accuracy
+            if (correction) {
+                spd = DUALSPEED * 0.2;
+            } else {
+                spd = DUALSPEED;
+            }
+
             // Set both wheels to spin at the same rate
             Wire.beginTransmission(MD25ADDR);
             Wire.write(MODE);
@@ -320,15 +342,12 @@ class Line: public Leg {
             // set the speed
             Wire.beginTransmission(MD25ADDR);
             Wire.write(SPEEDLEFT);
-            if (correction) {
-                spd = DUALSPEED * 0.2;
-            } else {
-                spd = DUALSPEED;
-            }
+            
+            // if we're given a negative distance, drive backwards
             if (d < 0) {
-                Wire.write((char)(128 - (this->direction * spd)));
+                Wire.write((char)(128 - spd));
             } else {
-                Wire.write((char)(128 + (this->direction * spd)));
+                Wire.write((char)(128 + spd));
             }
             Wire.endTransmission();
         }
@@ -384,7 +403,14 @@ class Circle: public Leg {
         // drive round in a circle
         int driven = this->drive();
 
-        Serial.println(driven);
+        /*int innerShortfall = this->theta - driven;
+
+        while (abs(innerShortfall) <= ANGULARTOL && this->loopCount < MAXLOOPCOUNT) {
+            
+
+            this->loopCount++;
+        }
+        this->loopCount = 0;*/
 
         // rotate to start of next leg
         this->rotate(endRot, false);
@@ -442,10 +468,10 @@ class Circle: public Leg {
             Wire.endTransmission();
         }
 
-        int avgDist = averageDistance();
+        int innerDriven = individualDistance(innerWheel);
         resetEncoders();
         this->stop();
-        return avgDist;
+        return innerDriven;
     }
     
 };
