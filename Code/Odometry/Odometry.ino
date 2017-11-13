@@ -76,7 +76,7 @@ int averageDistance() {
     return (int)((distLeft + distRight)/ 2);
 }
 
-// find distance left wheel has moved
+// find distance a specific wheel has moved
 int individualDistance(char side) {
     // set MD25 to send the encoder for the given side
     Wire.beginTransmission(MD25ADDR);
@@ -100,9 +100,10 @@ int individualDistance(char side) {
 
     delay(5);
 
+    // convert clicks to mm
     int dist = clicks * CLICKSTOMM;
     
-    // return a value in mm
+    // return absolute distance moved
     return abs(dist);
 }
 
@@ -401,16 +402,17 @@ class Circle: public Leg {
         Serial.print(" ");
         
         // drive round in a circle
-        int driven = this->drive();
+        int driven = this->drive(this->radius, false);
 
-        /*int innerShortfall = this->theta - driven;
+        // get angular shortfall
+        int angShortfall = this->theta - driven;
 
         while (abs(innerShortfall) <= ANGULARTOL && this->loopCount < MAXLOOPCOUNT) {
-            
-
+            driven = this->drive(innerShortfall, true);
+            shortfall = abs(shortfall) - driven;
             this->loopCount++;
         }
-        this->loopCount = 0;*/
+        this->loopCount = 0;
 
         // rotate to start of next leg
         this->rotate(endRot, false);
@@ -419,8 +421,11 @@ class Circle: public Leg {
         this->action();
     }
 
-    int drive() {
+    int drive(int t, bool correction) {
         char innerWheel, outerWheel, innerSpeed, outerSpeed;
+
+        // reset inner distance to theta
+        this->innerDist = (int)(2 * PI * (this->radius - WHEELDIST) * ((float)abs(t) / 360));
 
         // if we're going forward, the left wheel is on the inside, else its the outside wheel
         if (this->direction == FORWARD) {
@@ -437,6 +442,11 @@ class Circle: public Leg {
 
         // angular velocity from dual speed, with direction
         float omega = this->direction * ((float)DUALSPEED * 0.5 / (float)this->radius);
+
+        // if correction, reduce the speed for greater accuracy
+        if (correction) {
+            omega *= 0.2;
+        }
 
         Serial.print("Omega: ");
         Serial.println(omega);
@@ -469,9 +479,11 @@ class Circle: public Leg {
         }
 
         int innerDriven = individualDistance(innerWheel);
+        // get the angle driven through
+        int ang = 360 * innerDriven / (2 * PI * (this->radius - WHEELDIST));
         resetEncoders();
         this->stop();
-        return innerDriven;
+        return ang;
     }
     
 };
@@ -508,7 +520,8 @@ void setup()
     Leg** legs = new Leg*[13];
 
     /*
-     * = THE LEG CODE =
+     * ---- THE LEG CODE ----
+     * 
      * Each leg represents a part of the course, with the following parameters
      *      Line - Distance, Direction, Angle to turn at end, drop M&M
      *    Circle - Radius, angle to move through, direction, angle to turn at end, drop M&M 
@@ -534,7 +547,6 @@ void setup()
         Serial.print("Running ");
         Serial.println(i);
         legs[i]->run();
-        delay(1000);
     }
     
     /*Line test = Line(500, FORWARD, 90, false);
