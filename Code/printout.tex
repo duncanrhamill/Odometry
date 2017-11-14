@@ -16,7 +16,7 @@
 \pagestyle{fancy}
 \lhead{}
 \rhead{}
-\rfoot{Page \textbf{\thepage} of \textbf{\pageref{LastPage}}}
+\rfoot{Page \textbf{\thepage} of \textbf{12}}
 \renewcommand{\footrulewidth}{0.4pt}
 
 \renewcommand{\theFancyVerbLine}{\sffamily \textcolor[rgb]{0.5,0.5,1.0}{\normalsize\arabic{FancyVerbLine}}}
@@ -28,6 +28,32 @@
         \normalsize
     \end{center}
 
+    \subsection*{Odometry.ino - Arduino logic}
+
     \inputminted[linenos]{cpp}{./Odometry/Odometry.ino}
+
+    \subsection*{Course.cpp - Logic for completing the course}
+
+    \inputminted[linenos]{cpp}{./Odometry/Course.cpp}
+
+    \subsection*{Leg.cpp - defines code for completing a section of the course}
+
+    \inputminted[linenos]{cpp}{./Odometry/Leg.cpp}
+
+    \subsection*{Line.cpp - logic for driving a straight line}
+
+    \inputminted[linenos]{cpp}{./Odometry/Line.cpp}
+
+    \subsection*{Circle.cpp - logic for driving an arc of the course}
+
+    \inputminted[linenos]{cpp}{./Odometry/Circle.cpp}
+
+    \subsection*{encoderInteraction.cpp - functions for interacting with the MD25 encoders}
+
+    \inputminted[linenos]{cpp}{./Odometry/encoderInteraction.cpp}
+
+    \subsection*{defines.h - header including all definitions}
+
+    \inputminted[linenos]{cpp}{./Odometry/defines.h}
     
 \end{document}

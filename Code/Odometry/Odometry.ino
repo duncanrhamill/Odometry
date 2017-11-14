@@ -38,11 +38,7 @@ void setup() {
     delay(3000);
 
     // TESTING - loop through legs and run their action
-    for (int i = 0; i < 13; i++) {
-        Serial.print("Running ");
-        Serial.println(i);
-        course.legs[i]->run();
-    }
+    course.run();
     
     /*Line test = Line(500, FORWARD, 90, false);
     test.run();

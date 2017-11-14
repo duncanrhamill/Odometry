@@ -44,6 +44,15 @@ class Course {
             legs[i]->servoPosition = servoPosition_ptr;
         }
     }
+
+    void run() {
+        for (int i = 0; i < 13; i++) {
+            Serial.print("Running leg ");
+            Serial.println(i);
+
+            legs[i]->run();
+        }
+    }
 };
 
 #endif
