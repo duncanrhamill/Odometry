@@ -35,15 +35,13 @@ void setup() {
     Course course = Course(servo_ptr, &ServoPosition);
 
     // wait a bit before we start
-    delay(3000);
+    delay(1000);
 
     // TESTING - loop through legs and run their action
-    course.run();
+    //course.run();
     
-    /*Line test = Line(500, FORWARD, 90, false);
-    test.run();
-    Circle testCircle = Circle(180, 270, BACKWARD, 90, true);
-    testCircle.run();*/
+    Circle c = Circle(150, 180, FORWARD, 0, false);
+    c.run();
 
     // turn on for event
     //finished();

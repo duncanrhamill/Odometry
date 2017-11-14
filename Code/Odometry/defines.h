@@ -18,7 +18,7 @@
 #define FORWARD 1               // multiplier to move forward
 #define BACKWARD -1             // backwards multiplier
 #define LINEARTOL 2             // linear tolerance for accuracy in straight line
-#define ANGULARTOL 2
+#define ANGULARTOL 0.5
 #define CLICKSTOMM 0.890        // conversion factor from clicks to mm
 
 // MD25 I2C codes

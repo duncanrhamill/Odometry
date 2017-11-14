@@ -40,8 +40,6 @@ class Line: public Leg {
 
         // aim to get within 2mm of the target waypoint, without going over MAXLOOPCOUNT
         while (abs(shortfall) > LINEARTOL && loopCount < MAXLOOPCOUNT) {
-            Serial.print("Shortfall ");
-            Serial.println(shortfall);
             // if we aren't on target, drive the shortfall again, looping over to check we reached it
             driven = this->drive(shortfall, true);
             this->stop();
@@ -52,7 +50,18 @@ class Line: public Leg {
         this->loopCount = 0;
 
         // now repeat this for rotation
-        this->rotate(this->endRot, false);
+        float rotated = this->rotate(this->endRot, false);
+
+        float rotShortfall = this->endRot - rotated;
+
+        while (abs(rotShortfall) > ANGULARTOL && loopCount < MAXLOOPCOUNT) {
+            Serial.println("Correcting rotation");
+            rotated = this->rotate(rotShortfall, true);
+            this->stop();
+            rotShortfall = abs(rotShortfall) - rotated;
+            this->loopCount++;
+        }
+        this->loopCount = 0;
 
         // blink light, sound buzzer, and drop M&M if needed
         this->action();
@@ -61,6 +70,10 @@ class Line: public Leg {
     // move the wheels the desired distance, and return the actual distance driven
     int drive(int d, bool correction) {
         Serial.print("Line ");
+
+        if (d == 0) {
+            return 0;
+        }
         
         while(averageDistance() <= abs(d)) {
             int spd;

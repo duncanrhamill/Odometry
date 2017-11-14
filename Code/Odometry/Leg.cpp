@@ -58,8 +58,10 @@ class Leg
     }
 
     // rotate by the given angle (+ve clockwise), returning the actual angle rotated
-    int rotate(int t, bool correction) {
+    float rotate(int t, bool correction) {
         Serial.print("Rotate ");
+
+        Serial.print(t);
 
         // find distance needed to rotate
         int dist = (int)(2 * PI * WHEELDIST * ((float)abs(t) / (float)360));
@@ -95,8 +97,6 @@ class Leg
         
         // while we've not rotated less that the required distance
         while (averageDistance() <= dist) {
-            Serial.println(averageDistance());
-          
             // set wheels to spin at different speeds
             Wire.beginTransmission(MD25ADDR);
             Wire.write(MODE);
@@ -122,10 +122,15 @@ class Leg
             Wire.endTransmission();
         }
 
-        int avg = averageDistance();
+        long avg = (long)averageDistance();
 
-        // return the angle rotated
-        int ang = (int)((float)(360 * avg)/(float)(2 * PI * WHEELDIST));
+        Serial.print(avg);
+        Serial.print(" ");
+        
+        float ang = (int)((float)(360 * avg)/((float)(2 * PI * WHEELDIST)));
+
+        Serial.print(ang);
+        Serial.print(" ");
 
         resetEncoders();
         this->stop();
