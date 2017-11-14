@@ -15,7 +15,7 @@ class Course {
   public:
     Leg** legs;
 
-    Course() {
+    Course(Servo* servo_ptr, int* servoPosition_ptr) {
         legs = new Leg*[13];
 
         /*
@@ -38,6 +38,11 @@ class Course {
         legs[10] = new Line(500, FORWARD, 90, false);
         legs[11] = new Line(260, FORWARD, 90, false);
         legs[12] = new Line(340, FORWARD, 143, false);
+
+        for (int i = 0; i < 13; i++) {
+            legs[i]->servo = servo_ptr;
+            legs[i]->servoPosition = servoPosition_ptr;
+        }
     }
 };
 

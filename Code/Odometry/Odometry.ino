@@ -8,17 +8,34 @@
  */
 
 #include "defines.h"
+#include "encoderInteraction.cpp"
 #include "Course.cpp"
 
 #include <Wire.h>
+#include <Servo.h>
 
 void setup() {
+    // start serial for monitoring
     Serial.begin(9600);
     
+    // setup the I2C and wait 100ms
     Wire.begin();
+    delay(100);
 
+    // zero the encoders
+    resetEncoders();
 
-    Course course = new Course();
+    // setup servo pointers
+    Servo* servo;
+    *servo.attach(SERVOPIN);
+    ServoPosition = SERVOINIT;
+    servo.write(ServoPosition);
+
+    // initialise the course
+    Course course = new Course(&Servo, &ServoPosition);
+
+    // wait a bit before we start
+    delay(3000);
 
     // TESTING - loop through legs and run their action
     for (int i = 0; i < 13; i++) {

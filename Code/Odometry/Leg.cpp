@@ -15,10 +15,11 @@
 
 class Leg
 {
+  public:
     // pointer to serveo position variable
     int* servoPosition;
-    
-  public:
+    Servo* servo;
+
     // Should we drop an M&M?, leg finished successfully?
     bool drop, direction;
     
@@ -51,7 +52,7 @@ class Leg
         }
         
         // write the servo position and wait to ensure clean drop
-        servo.write(*servoPosition);
+        *servo.write(*servoPosition);
         delay(SERVOPAUSE);
     }
 
