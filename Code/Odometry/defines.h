@@ -9,7 +9,6 @@
 // constant definitions
 #define MAXLOOPCOUNT 5          // maximum times to loop while correcting steer/drive
 #define WHEELDIST 125           // distance between centre of robot and centre of wheels
-#define PI 3.14159              // pi
 #define PIEZOFREQ 1000          // frequency to sound the buzzer at
 #define NOTIFYPAUSE 200         // time to sound buzzer and flash light if not dropping M&M
 #define SERVOINIT 0             // initial angle for servo to sit at (the empty hole)

@@ -6,6 +6,7 @@
 #include "encoderInteraction.cpp"
 #include "Leg.cpp"
 
+#include <Arduino.h>
 #include <Wire.h>
 
 // include guard

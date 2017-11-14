@@ -1,31 +1,19 @@
 /*
  *  Encoder interaction file, contains functions to read and clear MD25 encoders
+ *          Uses inline functions to prevent multiple definitions
  */
 
 #include "defines.h"
 
+#include <Arduino.h>
 #include <Wire.h>
 
 // include guard
 #ifndef ENCODERINTERACTION_CPP
 #define ENCODERINTERACTION_CPP
 
-// find the average distance travelled
-int averageDistance() {
-    // get individual wheel distances
-    int distLeft = individualDistance(ENCODELEFT);
-    int distRight = individualDistance(ENCODERIGHT);
-
-    // find the absolute distance
-    distLeft = abs(distLeft);
-    distRight = abs(distRight);
-
-    // return the average
-    return (int)((distLeft + distRight)/ 2);
-}
-
 // find distance a specific wheel has moved
-int individualDistance(char side) {
+inline int individualDistance(char side) {
     // set MD25 to send the encoder for the given side
     Wire.beginTransmission(MD25ADDR);
     Wire.write(side);
@@ -56,12 +44,26 @@ int individualDistance(char side) {
 }
 
 // reset distance encoders between legs
-void resetEncoders() {
+inline void resetEncoders() {
     Wire.beginTransmission(MD25ADDR);
     Wire.write(CMD);
     Wire.write(CLEARENCODERREGISTERS);
     Wire.endTransmission();
     delay(50);
+}
+
+// find the average distance travelled
+inline int averageDistance() {
+    // get individual wheel distances
+    int distLeft = individualDistance(ENCODELEFT);
+    int distRight = individualDistance(ENCODERIGHT);
+
+    // find the absolute distance
+    distLeft = abs(distLeft);
+    distRight = abs(distRight);
+
+    // return the average
+    return (int)((distLeft + distRight)/ 2);
 }
 
 #endif

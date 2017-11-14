@@ -26,13 +26,13 @@ void setup() {
     resetEncoders();
 
     // setup servo pointers
-    Servo* servo;
-    *servo.attach(SERVOPIN);
-    ServoPosition = SERVOINIT;
-    servo.write(ServoPosition);
+    Servo* servo_ptr;
+    servo_ptr->attach(SERVOPIN);
+    int ServoPosition = SERVOINIT;
+    servo_ptr->write(ServoPosition);
 
     // initialise the course
-    Course course = new Course(&Servo, &ServoPosition);
+    Course course = Course(servo_ptr, &ServoPosition);
 
     // wait a bit before we start
     delay(3000);

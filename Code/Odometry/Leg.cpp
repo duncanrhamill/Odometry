@@ -6,6 +6,7 @@
 #include "defines.h"
 #include "encoderInteraction.cpp"
 
+#include <Arduino.h>
 #include <Servo.h>
 #include <Wire.h>
 
@@ -52,7 +53,7 @@ class Leg
         }
         
         // write the servo position and wait to ensure clean drop
-        *servo.write(*servoPosition);
+        servo->write(*servoPosition);
         delay(SERVOPAUSE);
     }
 

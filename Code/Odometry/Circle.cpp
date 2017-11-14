@@ -6,6 +6,7 @@
 #include "encoderInteraction.cpp"
 #include "Leg.cpp"
 
+#include <Arduino.h>
 #include <Wire.h>
 
 // include guard
@@ -52,9 +53,9 @@ class Circle: public Leg {
         // get angular shortfall
         int angShortfall = this->theta - driven;
 
-        while (abs(innerShortfall) <= ANGULARTOL && this->loopCount < MAXLOOPCOUNT) {
-            driven = this->drive(innerShortfall, true);
-            shortfall = abs(shortfall) - driven;
+        while (abs(angShortfall) <= ANGULARTOL && this->loopCount < MAXLOOPCOUNT) {
+            driven = this->drive(angShortfall, true);
+            angShortfall = abs(angShortfall) - driven;
             this->loopCount++;
         }
         this->loopCount = 0;
