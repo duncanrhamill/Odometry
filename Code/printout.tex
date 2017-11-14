@@ -1,0 +1,33 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper, margin=2cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{minted}
+
+\usemintedstyle{vs}
+
+\title{Aero Group A2-2 Odometry Code}
+
+\makeatletter
+\let\Title\@title
+\makeatother
+
+\pagestyle{fancy}
+\lhead{}
+\rhead{}
+\rfoot{Page \textbf{\thepage} of \textbf{\pageref{LastPage}}}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\renewcommand{\theFancyVerbLine}{\sffamily \textcolor[rgb]{0.5,0.5,1.0}{\normalsize\arabic{FancyVerbLine}}}
+
+\begin{document}
+
+    \begin{center}
+        \Large \textbf{\Title} \\[0.8cm]
+        \normalsize
+    \end{center}
+
+    \inputminted[linenos]{cpp}{./Odometry/Odometry.ino}
+    
+\end{document}
