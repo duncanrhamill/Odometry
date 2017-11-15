@@ -71,7 +71,7 @@ class Circle: public Leg {
         char innerWheel, outerWheel, innerSpeed, outerSpeed;
 
         // reset inner distance to theta
-        this->innerDist = (int)(2 * PI * (this->radius - WHEELDIST) * ((float)abs(t) / 360));
+        this->innerDist = (int)(2 * PI * (this->radius - WHEELDIST) * ((float)fabs(t) / 360));
 
         // if we're going forward, the left wheel is on the inside, else its the outside wheel
         if (this->direction == FORWARD) {
