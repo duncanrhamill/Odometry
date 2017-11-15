@@ -33,8 +33,17 @@ void setup() {
     // TESTING - loop through legs and run their action
     course.run();
 
-    //Circle l = Circle(180, 270, BACKWARD, 0, true);
-    //l.run();
+    /*Line l1 = Line(500, FORWARD, 0, false);
+    Line l2 = Line(500, FORWARD, 0, false);
+    Line l3 = Line(500, BACKWARD, 0, false);
+    Line l4 = Line(500, BACKWARD, 0, false);
+    l1.run();
+    delay(1000);
+    l2.run();
+    delay(1000);
+    l3.run();
+    delay(1000);
+    l4.run();*/
 
     // turn on for event
     //finished();

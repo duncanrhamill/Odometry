@@ -18,9 +18,9 @@ class Line: public Leg {
     int loopCount, dir;
 
     // ramp function to increase speed over course of a line
-    int ramp(int max, int dist, int x) {
-        int offset = (2 * max / dist)*(x - (dist / 2));
-        int spd = max - abs(offset);
+    int ramp(int m, int dist, int x) {
+        int offset = (2 * m / dist)*(x - (dist / 2));
+        int spd = m - abs(offset);
         Serial.println(spd);
         return spd;
     }
@@ -40,12 +40,17 @@ class Line: public Leg {
 
     // implement the run function
     void run() {
+
+        if (this->dir == BACKWARD) {
+            this->dist *= 0.9;
+        }
         
         // run drive, get how far we actually drove
         int driven = this->drive(this->dir * this->dist, false);
 
         // calculate distance left to drive
         int shortfall = (this->dir * this->dist) - driven;
+        shortfall *= 1.7;
 
         // aim to get within LINEARTOL of the target waypoint, without going over MAXLOOPCOUNT
         while (abs(shortfall) > LINEARTOL && loopCount < MAXLOOPCOUNT) {
@@ -53,6 +58,7 @@ class Line: public Leg {
             driven = this->drive(shortfall, true);
             this->stop();
             shortfall = shortfall - driven;
+            shortfall *= 1.7;
             this->loopCount++;
             
         } 
@@ -84,7 +90,8 @@ class Line: public Leg {
         if (d == 0) {
             return 0;
         }
-        
+
+        resetEncoders();
         while(averageDistance() <= abs(d)) {
             int spd;
 
@@ -92,19 +99,19 @@ class Line: public Leg {
             if (correction) {
                 spd = DUALSPEED * 0.1;
             } else {
-                spd = DUALSPEED;
+                spd = ramp(DUALSPEED, abs(d), averageDistance());
             }
+
+            Serial.print(spd);
+            Serial.print(" ");
+            Serial.print((unsigned char)(128 + spd));
+            Serial.print(" ");
+            Serial.println((unsigned char)(128 - spd));
 
             // Set both wheels to spin at the same rate
             Wire.beginTransmission(MD25ADDR);
             Wire.write(MODE);
             Wire.write(MODEUNSIGNEDDUAL);
-            Wire.endTransmission();
-
-            // set the acceleration mode to fast
-            Wire.beginTransmission(MD25ADDR);
-            Wire.write(ACCEL);
-            Wire.write(ACCELDEFAULT);
             Wire.endTransmission();
 
             // set the speed
@@ -113,9 +120,9 @@ class Line: public Leg {
             
             // if we're given a negative distance, drive backwards
             if (d < 0) {
-                Wire.write((char)(128 - spd));
+                Wire.write((unsigned char)(128 - spd));
             } else {
-                Wire.write((char)(128 + spd));
+                Wire.write((unsigned char)(128 + spd));
             }
             Wire.endTransmission();
         }
