@@ -33,10 +33,10 @@ class Course {
         *    Circle - Radius, angle to move through, direction, angle to turn at end, drop M&M 
         */
         legs[0] = new Line(425, BACKWARD, 0, true);
-        legs[1] = new Line(355, BACKWARD, -37, false);
-        legs[2] = new Circle(170, 250, FORWARD, 90, true);
-        legs[3] = new Line(170, BACKWARD, -30, false);
-        legs[4] = new Line(550, FORWARD, 35, true);
+        legs[1] = new Line(355, BACKWARD,-37, false);
+        legs[2] = new Circle(180, 260, FORWARD, 90, true);
+        legs[3] = new Line(170, BACKWARD, -40, false);
+        legs[4] = new Line(550, FORWARD, 40, true);
         legs[5] = new Line(400, FORWARD,90, false);
         legs[6] = new Line(400, FORWARD, 90, true);
         legs[7] = new Line(400, FORWARD, 90, false);
