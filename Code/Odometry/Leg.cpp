@@ -43,9 +43,9 @@ class Leg
 
         // if we're in correction mode rotate slower
         if (correction) {
-            rotateSpeed = DUALSPEED * 0.05;
+            rotateSpeed = DUALSPEED * 0.1;
         } else {
-            rotateSpeed = DUALSPEED * 0.2;
+            rotateSpeed = DUALSPEED * 0.4;
         }
 
         // set speeds of each wheel depending on direction (+ve -> left goes forwards)

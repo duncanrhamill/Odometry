@@ -17,7 +17,7 @@
 #define DUALSPEED 50            // speed of the motors in dual mode
 #define FORWARD 1               // multiplier to move forward
 #define BACKWARD -1             // backwards multiplier
-#define LINEARTOL 2             // linear tolerance for accuracy in straight line
+#define LINEARTOL 1             // linear tolerance for accuracy in straight line
 #define ANGULARTOL 0.75
 #define ARCTOL 0.2
 #define CLICKSTOMM 0.890        // conversion factor from clicks to mm
@@ -45,7 +45,7 @@
 
 // pin definitions
 #define LEDPIN 8                // led pin
-#define PIEZOPIN 3              // buzzer spin
+#define PIEZOPIN 9              // buzzer pin
 #define SERVOPIN 10             // servo pin
 
 #endif

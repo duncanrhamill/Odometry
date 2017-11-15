@@ -18,9 +18,9 @@ class Line: public Leg {
     int loopCount, dir;
 
     // ramp function to increase speed over course of a line
-    int ramp(int max, int dist, int x) {
-        int offset = (2 * max / dist)*(x - (dist / 2));
-        int spd = max - abs(offset);
+    int ramp(int m, int dist, int x) {
+        int offset = (2 * (float)m / dist)*(x - ((float)dist / 2));
+        int spd = m - abs(offset);
         Serial.println(spd);
         return spd;
     }
@@ -44,8 +44,10 @@ class Line: public Leg {
         // run drive, get how far we actually drove
         int driven = this->drive(this->dir * this->dist, false);
 
-        // calculate distance left to drive
+        /*// calculate distance left to drive
         int shortfall = (this->dir * this->dist) - driven;
+
+        shortfall *= 1.5;
 
         // aim to get within LINEARTOL of the target waypoint, without going over MAXLOOPCOUNT
         while (abs(shortfall) > LINEARTOL && loopCount < MAXLOOPCOUNT) {
@@ -53,10 +55,11 @@ class Line: public Leg {
             driven = this->drive(shortfall, true);
             this->stop();
             shortfall = shortfall - driven;
+            shortfall *= 1.5;
             this->loopCount++;
             
         } 
-        this->loopCount = 0;
+        this->loopCount = 0;*/
 
         // now repeat this for rotation
         float rotated = this->rotate(this->endRot, false);
@@ -76,6 +79,7 @@ class Line: public Leg {
 
     // move the wheels the desired distance, and return the actual distance driven
     int drive(int d, bool correction) {
+      
         Serial.print("Line ");
         Serial.print(this->dir);
         Serial.print(" ");
@@ -84,15 +88,23 @@ class Line: public Leg {
         if (d == 0) {
             return 0;
         }
-        
-        while(averageDistance() <= abs(d)) {
+
+        if (this->dir == BACKWARD) {
+            d *= 0.9;
+        }
+
+        int avgDist;
+        resetEncoders();
+        do {
+            avgDist = averageDistance();
+            
             int spd;
 
             // if in a correction, go slowly for more accuracy
             if (correction) {
                 spd = DUALSPEED * 0.1;
             } else {
-                spd = DUALSPEED;
+                spd = 1 + ramp(2* DUALSPEED, abs(d), avgDist);
             }
 
             // Set both wheels to spin at the same rate
@@ -113,12 +125,12 @@ class Line: public Leg {
             
             // if we're given a negative distance, drive backwards
             if (d < 0) {
-                Wire.write((char)(128 - spd));
+                Wire.write((unsigned char)(128 - spd));
             } else {
-                Wire.write((char)(128 + spd));
+                Wire.write((unsigned char)(128 + spd));
             }
             Wire.endTransmission();
-        }
+        } while (avgDist <= abs(d));
 
         // return the read distance
         int avg = averageDistance();
