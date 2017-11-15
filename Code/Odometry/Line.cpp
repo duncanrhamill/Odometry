@@ -20,7 +20,7 @@ class Line: public Leg {
     // ramp function to increase speed over course of a line
     int ramp(int max, int dist, int x) {
         int offset = (dist / 2) - x;
-        return (char)(max - abs(offset));
+        return (max - abs(offset));
     }
 
   public:
