@@ -19,8 +19,8 @@ class Line: public Leg {
 
     // ramp function to increase speed over course of a line
     int ramp(int max, int dist, int x) {
-        int offset = (dist / 2) - x;
-        return (max - abs(offset));
+        int offset = (2 * max / dist)*(x - (dist / 2));
+        return max - abs(offset);
     }
 
   public:
@@ -39,13 +39,13 @@ class Line: public Leg {
     // implement the run function
     void run() {
        
-        // run drive, get how far we actually drove
+        // run drive, multiplying distance by direction so we can go backwards if needed, get how far we actually drove
         int driven = this->drive(this->direction * this->dist, false);
 
         // calculate distance left to drive
         int shortfall = this->dist - driven;
 
-        // aim to get within 2mm of the target waypoint, without going over MAXLOOPCOUNT
+        // aim to get within LINEARTOL of the target waypoint, without going over MAXLOOPCOUNT
         while (abs(shortfall) > LINEARTOL && loopCount < MAXLOOPCOUNT) {
             // if we aren't on target, drive the shortfall again, looping over to check we reached it
             driven = this->drive(shortfall, true);
