@@ -37,10 +37,10 @@ inline int individualDistance(char side) {
     delay(5);
 
     // convert clicks to mm
-    int dist = clicks * CLICKSTOMM;
+    float dist = clicks * CLICKSTOMM;
     
     // return absolute distance moved
-    return abs(dist);
+    return fabs(dist);
 }
 
 // reset distance encoders between legs
@@ -53,25 +53,25 @@ inline void resetEncoders() {
 }
 
 // find the average distance travelled
-inline int averageDistance() {
+inline float averageDistance() {
     // get individual wheel distances
-    int distLeft = individualDistance(ENCODELEFT);
-    int distRight = individualDistance(ENCODERIGHT);
+    float distLeft = individualDistance(ENCODELEFT);
+    float distRight = individualDistance(ENCODERIGHT);
 
     // find the absolute distance
-    distLeft = abs(distLeft);
-    distRight = abs(distRight);
+    distLeft = fabs(distLeft);
+    distRight = fabs(distRight);
 
     // return the average
-    return (int)((distLeft + distRight)/ 2);
+    return ((distLeft + distRight)/ 2);
 }
 
 // turns out abs doesn't like floats
-inline float fabs(float f) {
+/*inline float fabs(float f) {
     if (f < 0) {
         return -f;
     }
     return f;
-}
+}*/
 
 #endif

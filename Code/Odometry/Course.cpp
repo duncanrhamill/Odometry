@@ -7,6 +7,8 @@
 #include "Line.cpp"
 #include "Circle.cpp"
 
+#include <Servo.h>
+
 // include guard
 #ifndef COURSE_CPP
 #define COURSE_CPP
@@ -15,8 +17,13 @@ class Course {
   public:
     Leg** legs;
 
-    Course(Servo* servo_ptr, int* servoPosition_ptr) {
-        legs = new Leg*[13];
+    Servo servo;
+    int servoPosition;
+
+    Course() {
+        Serial.println("Constructing course");
+      
+        ServoSetup();
 
         /*
         * ---- THE LEG CODE ----
@@ -25,10 +32,10 @@ class Course {
         *      Line - Distance, Direction, Angle to turn at end, drop M&M
         *    Circle - Radius, angle to move through, direction, angle to turn at end, drop M&M 
         */
-        legs[0] = new Line(425, FORWARD, 0, true);
-        legs[1] = new Line(355, FORWARD,-37, false);
-        legs[2] = new Circle(170, 270, BACKWARD, -90, true);
-        legs[3] = new Line(180, BACKWARD, -40, false);
+        legs[0] = new Line(425, BACKWARD, 0, true);
+        legs[1] = new Line(355, BACKWARD,-37, false);
+        legs[2] = new Circle(180, 260, FORWARD, 90, true);
+        legs[3] = new Line(170, BACKWARD, -40, false);
         legs[4] = new Line(550, FORWARD, 40, true);
         legs[5] = new Line(400, FORWARD,90, false);
         legs[6] = new Line(400, FORWARD, 90, true);
@@ -39,10 +46,12 @@ class Course {
         legs[11] = new Line(256, BACKWARD, 90, false);
         legs[12] = new Line(335, FORWARD, 143, false);
 
-        for (int i = 0; i < 13; i++) {
-            legs[i]->servo = servo_ptr;
-            legs[i]->servoPosition = servoPosition_ptr;
-        }
+    }
+
+    void ServoSetup() {
+        servo.attach(SERVOPIN);
+        servoPosition = SERVOINIT;
+        servo.write(servoPosition);
     }
 
     void run() {
@@ -51,7 +60,41 @@ class Course {
             Serial.println(i);
 
             legs[i]->run();
+            action(legs[i]->drop);
         }
+    }
+
+    // perform actions at waypoint, including dropping M&M if needed
+    void action(bool drop) {
+        // turn on LED and buzzer
+        digitalWrite(LEDPIN, HIGH);
+        tone(PIEZOPIN, PIEZOFREQ);
+        
+        // if need to drop M&M, drop one, if not delay so we can see and hear buzzer
+        if (drop) { 
+            dispense(); 
+        } else { 
+            delay(NOTIFYPAUSE); 
+        }
+
+        // turn off led & buzzer
+        digitalWrite(LEDPIN, LOW);
+        noTone(PIEZOPIN);
+    }
+
+    // dispense an M&M
+    void dispense() {
+        // increase servo position
+        servoPosition += SERVOSTEP;
+
+        // make sure we don't accidentally run through all positions
+        if (servoPosition >= 179) {
+            servoPosition = 179;
+        }
+        
+        // write the servo position and wait to ensure clean drop
+        servo.write(servoPosition);
+        delay(SERVOPAUSE);
     }
 };
 

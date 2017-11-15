@@ -20,7 +20,9 @@ class Line: public Leg {
     // ramp function to increase speed over course of a line
     int ramp(int max, int dist, int x) {
         int offset = (2 * max / dist)*(x - (dist / 2));
-        return max - abs(offset);
+        int spd = max - abs(offset);
+        Serial.println(spd);
+        return spd;
     }
 
   public:
@@ -43,14 +45,14 @@ class Line: public Leg {
         int driven = this->drive(this->dir * this->dist, false);
 
         // calculate distance left to drive
-        int shortfall = this->dist - driven;
+        int shortfall = (this->dir * this->dist) - driven;
 
         // aim to get within LINEARTOL of the target waypoint, without going over MAXLOOPCOUNT
         while (abs(shortfall) > LINEARTOL && loopCount < MAXLOOPCOUNT) {
             // if we aren't on target, drive the shortfall again, looping over to check we reached it
             driven = this->drive(shortfall, true);
             this->stop();
-            shortfall = abs(shortfall) - driven;
+            shortfall = shortfall - driven;
             this->loopCount++;
             
         } 
@@ -59,27 +61,17 @@ class Line: public Leg {
         // now repeat this for rotation
         float rotated = this->rotate(this->endRot, false);
 
-        Serial.println(rotated);
-        Serial.print(" ");
-
         float rotShortfall = this->endRot - rotated;
 
-        Serial.println(rotShortfall);
-
-        while (abs(rotShortfall) > ANGULARTOL && loopCount < MAXLOOPCOUNT) {
-            Serial.println("Correcting rotation");
+        while (fabs(rotShortfall) > ANGULARTOL && loopCount < MAXLOOPCOUNT) {
+            Serial.print("Correcting shortfall ");
+            Serial.println(rotShortfall);
             rotated = this->rotate(rotShortfall, true);
             this->stop();
-            rotShortfall = abs(rotShortfall) - rotated;
-            Serial.print(rotated);
-            Serial.print(" ");
-            Serial.println(rotShortfall);
+            rotShortfall = rotShortfall - rotated;
             this->loopCount++;
         }
         this->loopCount = 0;
-
-        // blink light, sound buzzer, and drop M&M if needed
-        this->action();
     }
 
     // move the wheels the desired distance, and return the actual distance driven
@@ -130,7 +122,16 @@ class Line: public Leg {
 
         // return the read distance
         int avg = averageDistance();
+        
+        Serial.print("Distance required: ");
+        Serial.print(d);
+        Serial.print(", Distance traveled: ");
         Serial.println(avg);
+
+        if (d < 0) {
+            avg *= -1;
+        }
+        
         resetEncoders();
         this->stop();
         delay(50);

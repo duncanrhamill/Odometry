@@ -12,7 +12,6 @@
 #include "Course.cpp"
 
 #include <Wire.h>
-#include <Servo.h>
 
 void setup() {
     // start serial for monitoring
@@ -25,20 +24,17 @@ void setup() {
     // zero the encoders
     resetEncoders();
 
-    // setup servo pointers
-    Servo* servo_ptr;
-    servo_ptr->attach(SERVOPIN);
-    int ServoPosition = SERVOINIT;
-    servo_ptr->write(ServoPosition);
-
     // initialise the course
-    Course course = Course(servo_ptr, &ServoPosition);
+    Course course = Course();
 
     // wait a bit before we start
     delay(1000);
 
     // TESTING - loop through legs and run their action
     course.run();
+
+    //Circle l = Circle(180, 270, BACKWARD, 0, true);
+    //l.run();
 
     // turn on for event
     //finished();

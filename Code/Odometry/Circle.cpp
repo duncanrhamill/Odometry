@@ -22,10 +22,10 @@ class Circle: public Leg {
     int radius, theta, endRot;
 
     // constructor
-    Circle(int r, int t, int dir, int eR, bool m) {
+    Circle(int r, int t, int _dir, int eR, bool m) {
         this->radius = r;
         this->theta = t;
-        this->dir = dir;
+        this->dir = _dir;
         this->endRot = eR;
         this->drop = m;
         this->loopCount = 0;
@@ -55,17 +55,17 @@ class Circle: public Leg {
         Serial.print(" ");
 
         // get angular shortfall
-        float angShortfall = this->theta - driven;
+        float angShortfall = (this->dir * this->theta) - driven;
 
         Serial.println(angShortfall);
         Serial.print(" ");
 
-        while (abs(angShortfall) > ARCTOL && this->loopCount < MAXLOOPCOUNT) {
+        while (fabs(angShortfall) > ARCTOL && this->loopCount < MAXLOOPCOUNT) {
+            Serial.print(angShortfall);
+            Serial.print(" ");
             driven = this->drive(angShortfall, true);
             this->stop();
-            angShortfall = abs(angShortfall) - driven;
-            Serial.println(angShortfall);
-            Serial.print(" ");
+            angShortfall = angShortfall - driven;
             this->loopCount++;
         }
         this->loopCount = 0;
@@ -75,32 +75,25 @@ class Circle: public Leg {
 
         float rotShortfall = this->endRot - rotated;
 
-        while (abs(rotShortfall) > ANGULARTOL && loopCount < MAXLOOPCOUNT) {
+        while (fabs(rotShortfall) > ANGULARTOL && loopCount < MAXLOOPCOUNT) {
             Serial.println("Correcting rotation");
             rotated = this->rotate(rotShortfall, true);
             this->stop();
-            rotShortfall = abs(rotShortfall) - rotated;
+            rotShortfall = rotShortfall - rotated;
             this->loopCount++;
         }
         this->loopCount = 0;
-
-        // perform any actions needed
-        this->action();
     }
 
-    float drive(int t, bool correction) {
+    float drive(float t, bool correction) {
         char innerWheel, outerWheel, innerSpeed, outerSpeed;
 
-<<<<<<< HEAD
-        // reset inner distance to theta
-        this->innerDist = (int)(2 * PI * (this->radius - WHEELDIST) * ((float)fabs(t) / 360));
-=======
-        float test = (float)(abs(t)/360);
-        Serial.println(test, 10);
+        if (t == 0) {
+            return 0;
+        }
         
         // reset outer distance to theta
-        this->outerDist = (float)(2 * PI * (this->radius + WHEELDIST) * ((float)abs(t) / 360));
->>>>>>> ali-dev
+        this->outerDist = (float)(2 * PI * (this->radius + WHEELDIST) * ((float)fabs(t) / 360));
 
         // if we're going forward, the left wheel is on the inside, else its the outside wheel
         if (this->dir == FORWARD) {
@@ -116,7 +109,7 @@ class Circle: public Leg {
         }
 
         // angular velocity from dual speed, with direction
-        float omega = ((float)DUALSPEED * 0.5 / (float)this->radius);
+        float omega = ((float)DUALSPEED * 0.3 / (float)this->radius);
 
         if (t < 0) {
             omega *= -1;
@@ -130,40 +123,55 @@ class Circle: public Leg {
         Serial.print("Omega: ");
         Serial.println(omega);
 
+        unsigned char outerVel = 128 + (this->radius + WHEELDIST) * omega;
+        unsigned char innerVel = 128 + (this->radius - WHEELDIST) * omega;
+
+        Serial.print("outerVel: ");
+        Serial.print(outerVel, DEC);
+        Serial.print("innerVel: ");
+        Serial.println(innerVel, DEC);
+
+        long outerDriven;
+
         // loop through driving until one of the distances is over it's limit
-        while (individualDistance(outerWheel) <= this->outerDist) {
+        resetEncoders();
+        do  {
             // Set wheels to spin at different rates
             Wire.beginTransmission(MD25ADDR);
             Wire.write(MODE);
             Wire.write(MODESEPERATE);
             Wire.endTransmission();
 
-            // set the acceleration mode to fast
-            Wire.beginTransmission(MD25ADDR);
-            Wire.write(ACCEL);
-            Wire.write(ACCELDEFAULT);
-            Wire.endTransmission();
-
             // Set outer wheel speed
             Wire.beginTransmission(MD25ADDR);
             Wire.write(outerSpeed);
-            Wire.write((char)(128 + (this->radius + WHEELDIST) * omega));
+            Wire.write((unsigned char)outerVel);
             Wire.endTransmission();
 
             // set inner wheel speed
             Wire.beginTransmission(MD25ADDR);
             Wire.write(innerSpeed);
-            Wire.write((char)(128 + (this->radius - WHEELDIST) * omega));
+            Wire.write((unsigned char)innerVel);
             Wire.endTransmission();
-        }
+            
+            outerDriven = individualDistance(outerWheel);
+            
+        } while (outerDriven <= this->outerDist);
 
-        long outerDriven = individualDistance(outerWheel);
-
-        Serial.print(this->outerDist);
-        Serial.print(" ");
+        Serial.print("OuterDist: ");
+        Serial.println(this->outerDist);
+        Serial.print("OuterDriven: ");
         Serial.println(outerDriven);
         // get the angle driven through
         float ang = (float)(360 * outerDriven)/ (float)(2 * PI * (this->radius + WHEELDIST));
+
+        if (t < 0) {
+            ang *= -1;
+        }
+
+        Serial.print("ang: ");
+        Serial.println(ang);
+        
         resetEncoders();
         this->stop();
         return ang;

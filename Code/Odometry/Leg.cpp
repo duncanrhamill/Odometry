@@ -17,9 +17,6 @@
 class Leg
 {
   public:
-    // pointer to serveo position variable
-    int* servoPosition;
-    Servo* servo;
 
     // Should we drop an M&M?, leg finished successfully?
     bool drop, dir;
@@ -27,53 +24,28 @@ class Leg
     // Virtual function that will be called to run this leg of the course.
     virtual void run();
 
-    // perform actions at waypoint, including dropping M&M if needed
-    void action() {
-        // turn on LED and buzzer
-        digitalWrite(LEDPIN, HIGH);
-        tone(PIEZOPIN, PIEZOFREQ);
-        
-        // if need to drop M&M, drop one, if not delay so we can see and hear buzzer
-        if (this->drop) { this->dispense(); }
-        else { delay(NOTIFYPAUSE); }
-
-        // turn off led & buzzer
-        digitalWrite(LEDPIN, LOW);
-        noTone(PIEZOPIN);
-    }
-
-    // dispense an M&M
-    void dispense() {
-        // increase servo position
-        *servoPosition += SERVOSTEP;
-
-        // make sure we don't accidentally run through all positions
-        if (*servoPosition >= 179) {
-            *servoPosition = 179;
-        }
-        
-        // write the servo position and wait to ensure clean drop
-        servo->write(*servoPosition);
-        delay(SERVOPAUSE);
-    }
-
     // rotate by the given angle (+ve clockwise), returning the actual angle rotated
-    float rotate(int t, bool correction) {
+    float rotate(float t, bool correction) {
+        resetEncoders();
+      
         if (t == 0) {
             return 0;
         }
 
         // find distance needed to rotate
-        int dist = (int)(2 * PI * WHEELDIST * ((float)abs(t) / (float)360));
+        float dist = (2 * PI * WHEELDIST * ((float)fabs(t) / (float)360));
+
+        Serial.print("dist: ");
+        Serial.println(dist);
 
         // speeds of each wheel
         int leftWheel, rightWheel, rotateSpeed;
 
         // if we're in correction mode rotate slower
         if (correction) {
-            rotateSpeed = DUALSPEED * 0.1;
+            rotateSpeed = DUALSPEED * 0.05;
         } else {
-            rotateSpeed = DUALSPEED * 0.5;
+            rotateSpeed = DUALSPEED * 0.2;
         }
 
         // set speeds of each wheel depending on direction (+ve -> left goes forwards)
@@ -84,31 +56,40 @@ class Leg
             leftWheel = 128 - rotateSpeed;
             rightWheel = 128 + rotateSpeed;
         }
+
+        Serial.print("LeftWheel spd: ");
+        Serial.print((unsigned char)leftWheel, DEC);
+        Serial.print(", RightWheel spd: ");
+        Serial.println((unsigned char)rightWheel, DEC);
+
+        int avgD = averageDistance();
+
+        Serial.print("avg: ");
+        Serial.print(avgD);
         
         // while we've not rotated less that the required distance
         while (averageDistance() <= dist) {
+            Serial.print("l: ");
+            Serial.print(individualDistance(ENCODELEFT));
+            Serial.print(", r: ");
+            Serial.println(individualDistance(ENCODERIGHT));
+            
             // set wheels to spin at different speeds
             Wire.beginTransmission(MD25ADDR);
             Wire.write(MODE);
             Wire.write(MODESEPERATE);
             Wire.endTransmission();
 
-            // set the acceleration mode to fast
-            Wire.beginTransmission(MD25ADDR);
-            Wire.write(ACCEL);
-            Wire.write(ACCELDEFAULT);
-            Wire.endTransmission();
-
             // Set left wheel speed
             Wire.beginTransmission(MD25ADDR);
             Wire.write(SPEEDLEFT);
-            Wire.write((char)leftWheel);
+            Wire.write((unsigned char)leftWheel);
             Wire.endTransmission();
 
             // set right wheel speed
             Wire.beginTransmission(MD25ADDR);
             Wire.write(SPEEDRIGHT);
-            Wire.write((char)rightWheel);
+            Wire.write((unsigned char)rightWheel);
             Wire.endTransmission();
         }
 
@@ -119,6 +100,11 @@ class Leg
         if (t < 0) {
             ang *= -1;
         }
+
+        Serial.print("Rotate t: ");
+        Serial.print(t);
+        Serial.print(", Actual t: ");
+        Serial.println(ang);
 
         resetEncoders();
         this->stop();
