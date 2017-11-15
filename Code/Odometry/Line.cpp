@@ -16,6 +16,13 @@
 class Line: public Leg {
     // count how many times we loop over the drive sections, so we don't get stuck.
     int loopCount;
+
+    // ramp function to increase speed over course of a line
+    int ramp(int max, int dist, int x) {
+        int offset = (dist / 2) - x;
+        return (char)(max - abs(offset));
+    }
+
   public:
     // distance to travel, and how far to rotate to be pointing in correct direction at end of the leg
     int dist, endRot;
@@ -75,14 +82,14 @@ class Line: public Leg {
             return 0;
         }
         
-        while(averageDistance() <= abs(d)) {
+        while(int avgD = averageDistance() <= abs(d)) {
             int spd;
 
-            // if in a correction, go slowly for more accuracy
+            // if in a correction, go slowly for more accuracy, else increase speed over course of a line
             if (correction) {
                 spd = DUALSPEED * 0.2;
             } else {
-                spd = DUALSPEED;
+                spd = ramp(DUALSPEED, abs(d), avgD);
             }
 
             // Set both wheels to spin at the same rate

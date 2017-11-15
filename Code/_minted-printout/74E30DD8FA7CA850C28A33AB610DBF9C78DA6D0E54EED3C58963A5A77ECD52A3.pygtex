@@ -1,0 +1,73 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+cm}{/*}
+\PYG{c+cm}{ *      Odometry Task \PYGZhy{} Aero 2 Group 2}
+\PYG{c+cm}{ * }
+\PYG{c+cm}{ *          Code written by Duncan R Hamill \PYGZhy{} 28262174}
+\PYG{c+cm}{ *          Tested \PYGZam{} verified by Tom Griffiths \PYGZhy{} 28290771, Ali Hajizadah \PYGZhy{} 29053056, Robin Hannaford \PYGZhy{} , Felix Harris \PYGZhy{} 28611969}
+\PYG{c+cm}{ * }
+\PYG{c+cm}{ *          All distances in mm, all angles in degrees}
+\PYG{c+cm}{ */}
+
+\PYG{c+cp}{\PYGZsh{}include} \PYG{c+cpf}{\PYGZdq{}defines.h\PYGZdq{}}
+\PYG{c+cp}{\PYGZsh{}include} \PYG{c+cpf}{\PYGZdq{}encoderInteraction.cpp\PYGZdq{}}
+\PYG{c+cp}{\PYGZsh{}include} \PYG{c+cpf}{\PYGZdq{}Course.cpp\PYGZdq{}}
+
+\PYG{c+cp}{\PYGZsh{}include} \PYG{c+cpf}{\PYGZlt{}Wire.h\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}include} \PYG{c+cpf}{\PYGZlt{}Servo.h\PYGZgt{}}
+
+\PYG{k+kt}{void} \PYG{n+nf}{setup}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+    \PYG{c+c1}{// start serial for monitoring}
+    \PYG{n}{Serial}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(}\PYG{l+m+mi}{9600}\PYG{p}{);}
+    
+    \PYG{c+c1}{// setup the I2C and wait 100ms}
+    \PYG{n}{Wire}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{();}
+    \PYG{n}{delay}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{);}
+
+    \PYG{c+c1}{// zero the encoders}
+    \PYG{n}{resetEncoders}\PYG{p}{();}
+
+    \PYG{c+c1}{// setup servo pointers}
+    \PYG{n}{Servo}\PYG{o}{*} \PYG{n}{servo\PYGZus{}ptr}\PYG{p}{;}
+    \PYG{n}{servo\PYGZus{}ptr}\PYG{o}{\PYGZhy{}\PYGZgt{}}\PYG{n}{attach}\PYG{p}{(}\PYG{n}{SERVOPIN}\PYG{p}{);}
+    \PYG{k+kt}{int} \PYG{n}{ServoPosition} \PYG{o}{=} \PYG{n}{SERVOINIT}\PYG{p}{;}
+    \PYG{n}{servo\PYGZus{}ptr}\PYG{o}{\PYGZhy{}\PYGZgt{}}\PYG{n}{write}\PYG{p}{(}\PYG{n}{ServoPosition}\PYG{p}{);}
+
+    \PYG{c+c1}{// initialise the course}
+    \PYG{n}{Course} \PYG{n}{course} \PYG{o}{=} \PYG{n}{Course}\PYG{p}{(}\PYG{n}{servo\PYGZus{}ptr}\PYG{p}{,} \PYG{o}{\PYGZam{}}\PYG{n}{ServoPosition}\PYG{p}{);}
+
+    \PYG{c+c1}{// wait a bit before we start}
+    \PYG{n}{delay}\PYG{p}{(}\PYG{l+m+mi}{1000}\PYG{p}{);}
+
+    \PYG{c+c1}{// TESTING \PYGZhy{} loop through legs and run their action}
+    \PYG{c+c1}{//course.run();}
+    
+    \PYG{n}{Circle} \PYG{n}{c} \PYG{o}{=} \PYG{n}{Circle}\PYG{p}{(}\PYG{l+m+mi}{150}\PYG{p}{,} \PYG{l+m+mi}{180}\PYG{p}{,} \PYG{n}{FORWARD}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{,} \PYG{n+nb}{false}\PYG{p}{);}
+    \PYG{n}{c}\PYG{p}{.}\PYG{n}{run}\PYG{p}{();}
+
+    \PYG{c+c1}{// turn on for event}
+    \PYG{c+c1}{//finished();}
+
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+c1}{// just a bit of fun}
+\PYG{k+kt}{void} \PYG{n+nf}{finished}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+    \PYG{n}{tone}\PYG{p}{(}\PYG{l+m+mi}{9}\PYG{p}{,}\PYG{l+m+mi}{660}\PYG{p}{,}\PYG{l+m+mi}{100}\PYG{p}{);}
+    \PYG{n}{delay}\PYG{p}{(}\PYG{l+m+mi}{150}\PYG{p}{);}
+    \PYG{n}{tone}\PYG{p}{(}\PYG{l+m+mi}{9}\PYG{p}{,}\PYG{l+m+mi}{660}\PYG{p}{,}\PYG{l+m+mi}{100}\PYG{p}{);}
+    \PYG{n}{delay}\PYG{p}{(}\PYG{l+m+mi}{300}\PYG{p}{);}
+    \PYG{n}{tone}\PYG{p}{(}\PYG{l+m+mi}{9}\PYG{p}{,}\PYG{l+m+mi}{660}\PYG{p}{,}\PYG{l+m+mi}{100}\PYG{p}{);}
+    \PYG{n}{delay}\PYG{p}{(}\PYG{l+m+mi}{300}\PYG{p}{);}
+    \PYG{n}{tone}\PYG{p}{(}\PYG{l+m+mi}{9}\PYG{p}{,}\PYG{l+m+mi}{510}\PYG{p}{,}\PYG{l+m+mi}{100}\PYG{p}{);}
+    \PYG{n}{delay}\PYG{p}{(}\PYG{l+m+mi}{100}\PYG{p}{);}
+    \PYG{n}{tone}\PYG{p}{(}\PYG{l+m+mi}{9}\PYG{p}{,}\PYG{l+m+mi}{660}\PYG{p}{,}\PYG{l+m+mi}{100}\PYG{p}{);}
+    \PYG{n}{delay}\PYG{p}{(}\PYG{l+m+mi}{300}\PYG{p}{);}
+    \PYG{n}{tone}\PYG{p}{(}\PYG{l+m+mi}{9}\PYG{p}{,}\PYG{l+m+mi}{770}\PYG{p}{,}\PYG{l+m+mi}{100}\PYG{p}{);}
+    \PYG{n}{delay}\PYG{p}{(}\PYG{l+m+mi}{550}\PYG{p}{);}
+    \PYG{n}{tone}\PYG{p}{(}\PYG{l+m+mi}{9}\PYG{p}{,}\PYG{l+m+mi}{380}\PYG{p}{,}\PYG{l+m+mi}{100}\PYG{p}{);}
+    \PYG{n}{delay}\PYG{p}{(}\PYG{l+m+mi}{575}\PYG{p}{);}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{k+kt}{void} \PYG{n+nf}{loop}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+    
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

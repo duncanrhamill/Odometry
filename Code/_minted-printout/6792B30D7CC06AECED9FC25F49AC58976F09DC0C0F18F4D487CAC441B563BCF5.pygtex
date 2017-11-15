@@ -1,0 +1,52 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+cm}{/*}
+\PYG{c+cm}{ *  Defines for odometry task}
+\PYG{c+cm}{ */}
+
+\PYG{c+c1}{// include guard}
+\PYG{c+cp}{\PYGZsh{}ifndef DEFINES\PYGZus{}H}
+\PYG{c+cp}{\PYGZsh{}define DEFINES\PYGZus{}H}
+
+\PYG{c+c1}{// constant definitions}
+\PYG{c+cp}{\PYGZsh{}define MAXLOOPCOUNT 5          }\PYG{c+c1}{// maximum times to loop while correcting steer/drive}
+\PYG{c+cp}{\PYGZsh{}define WHEELDIST 125           }\PYG{c+c1}{// distance between centre of robot and centre of wheels}
+\PYG{c+cp}{\PYGZsh{}define PIEZOFREQ 1000          }\PYG{c+c1}{// frequency to sound the buzzer at}
+\PYG{c+cp}{\PYGZsh{}define NOTIFYPAUSE 200         }\PYG{c+c1}{// time to sound buzzer and flash light if not dropping M\PYGZam{}M}
+\PYG{c+cp}{\PYGZsh{}define SERVOINIT 0             }\PYG{c+c1}{// initial angle for servo to sit at (the empty hole)}
+\PYG{c+cp}{\PYGZsh{}define SERVOSTEP 34            }\PYG{c+c1}{// angle to rotate servo by in order to move to next hole}
+\PYG{c+cp}{\PYGZsh{}define SERVOPAUSE 400          }\PYG{c+c1}{// time to wait to ensure M\PYGZam{}M drops cleanly}
+\PYG{c+cp}{\PYGZsh{}define DUALSPEED 50            }\PYG{c+c1}{// speed of the motors in dual mode}
+\PYG{c+cp}{\PYGZsh{}define FORWARD 1               }\PYG{c+c1}{// multiplier to move forward}
+\PYG{c+cp}{\PYGZsh{}define BACKWARD \PYGZhy{}1             }\PYG{c+c1}{// backwards multiplier}
+\PYG{c+cp}{\PYGZsh{}define LINEARTOL 2             }\PYG{c+c1}{// linear tolerance for accuracy in straight line}
+\PYG{c+cp}{\PYGZsh{}define ANGULARTOL 0.5}
+\PYG{c+cp}{\PYGZsh{}define CLICKSTOMM 0.890        }\PYG{c+c1}{// conversion factor from clicks to mm}
+
+\PYG{c+c1}{// MD25 I2C codes}
+\PYG{c+cp}{\PYGZsh{}define MD25ADDR 0x58           }\PYG{c+c1}{// I2C MD25 address}
+\PYG{c+cp}{\PYGZsh{}define SPEEDLEFT 0x00          }\PYG{c+c1}{// MD25 register for speed \PYGZsh{}1 (left)}
+\PYG{c+cp}{\PYGZsh{}define SPEEDRIGHT 0x01         }\PYG{c+c1}{//   \PYGZdq{}      \PYGZdq{}       \PYGZdq{}      \PYGZsh{}2 (right)}
+\PYG{c+cp}{\PYGZsh{}define ENCODELEFT 0x02         }\PYG{c+c1}{// encoder address left}
+\PYG{c+cp}{\PYGZsh{}define ENCODERIGHT 0x06        }\PYG{c+c1}{// \PYGZdq{}        \PYGZdq{}      right}
+\PYG{c+cp}{\PYGZsh{}define ACCEL 0x0E              }\PYG{c+c1}{// Acceleration encoder}
+\PYG{c+cp}{\PYGZsh{}define MODE 0x0F               }\PYG{c+c1}{// mode register}
+\PYG{c+cp}{\PYGZsh{}define CMD 0x10                }\PYG{c+c1}{// command register}
+
+\PYG{c+c1}{// MD25 command codes}
+\PYG{c+cp}{\PYGZsh{}define CLEARENCODERREGISTERS 0x20  }\PYG{c+c1}{// code to clear encoder values}
+
+\PYG{c+c1}{// MD25 acceleration modes}
+\PYG{c+cp}{\PYGZsh{}define ACCELDEFAULT 2          }\PYG{c+c1}{// acceleration mode}
+
+\PYG{c+c1}{// MD25 modes}
+\PYG{c+cp}{\PYGZsh{}define MODEUNSIGNEDDUAL 2}
+\PYG{c+cp}{\PYGZsh{}define MODEDUAL 3              }\PYG{c+c1}{// dual motor mode, all off speed 1}
+\PYG{c+cp}{\PYGZsh{}define MODESEPERATE 0          }\PYG{c+c1}{// seperate motor speeds}
+
+\PYG{c+c1}{// pin definitions}
+\PYG{c+cp}{\PYGZsh{}define LEDPIN 8                }\PYG{c+c1}{// led pin}
+\PYG{c+cp}{\PYGZsh{}define PIEZOPIN 9              }\PYG{c+c1}{// buzzer spin}
+\PYG{c+cp}{\PYGZsh{}define SERVOPIN 10             }\PYG{c+c1}{// servo pin}
+
+\PYG{c+cp}{\PYGZsh{}endif}
+\end{Verbatim}
