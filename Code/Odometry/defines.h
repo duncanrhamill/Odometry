@@ -45,7 +45,7 @@
 
 // pin definitions
 #define LEDPIN 8                // led pin
-#define PIEZOPIN 9              // buzzer spin
+#define PIEZOPIN 3              // buzzer spin
 #define SERVOPIN 10             // servo pin
 
 #endif
