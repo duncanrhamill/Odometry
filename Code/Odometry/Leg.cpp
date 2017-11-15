@@ -22,7 +22,7 @@ class Leg
     Servo* servo;
 
     // Should we drop an M&M?, leg finished successfully?
-    bool drop, direction;
+    bool drop, dir;
     
     // Virtual function that will be called to run this leg of the course.
     virtual void run();
@@ -59,15 +59,12 @@ class Leg
 
     // rotate by the given angle (+ve clockwise), returning the actual angle rotated
     float rotate(int t, bool correction) {
-        Serial.print("Rotate ");
-
-        Serial.print(t);
+        if (t == 0) {
+            return 0;
+        }
 
         // find distance needed to rotate
         int dist = (int)(2 * PI * WHEELDIST * ((float)abs(t) / (float)360));
-
-        Serial.print(dist);
-        Serial.print(" ");
 
         // speeds of each wheel
         int leftWheel, rightWheel, rotateSpeed;
@@ -78,8 +75,6 @@ class Leg
         } else {
             rotateSpeed = DUALSPEED * 0.5;
         }
-        
-        Serial.print((int)rotateSpeed);
 
         // set speeds of each wheel depending on direction (+ve -> left goes forwards)
         if (t > 0) {
@@ -89,11 +84,6 @@ class Leg
             leftWheel = 128 - rotateSpeed;
             rightWheel = 128 + rotateSpeed;
         }
-
-        Serial.print(" ");
-        Serial.print((int)leftWheel);
-        Serial.print(" ");
-        Serial.println((int)rightWheel);
         
         // while we've not rotated less that the required distance
         while (averageDistance() <= dist) {
@@ -123,14 +113,12 @@ class Leg
         }
 
         long avg = (long)averageDistance();
-
-        Serial.print(avg);
-        Serial.print(" ");
         
-        float ang = (int)((float)(360 * avg)/((float)(2 * PI * WHEELDIST)));
+        float ang =((float)(360 * avg)/((float)(2 * PI * WHEELDIST)));
 
-        Serial.print(ang);
-        Serial.print(" ");
+        if (t < 0) {
+            ang *= -1;
+        }
 
         resetEncoders();
         this->stop();

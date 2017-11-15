@@ -15,7 +15,7 @@
 
 class Line: public Leg {
     // count how many times we loop over the drive sections, so we don't get stuck.
-    int loopCount;
+    int loopCount, dir;
 
     // ramp function to increase speed over course of a line
     int ramp(int max, int dist, int x) {
@@ -28,9 +28,9 @@ class Line: public Leg {
     int dist, endRot;
 
     // constructor
-    Line(int d, int dir, int r, bool m) {
+    Line(int d, int _dir, int r, bool m) {
         this->dist = d;
-        this->direction = dir;
+        this->dir = _dir;
         this->endRot = r;
         this->drop = m;
         this->loopCount = 0;
@@ -38,9 +38,9 @@ class Line: public Leg {
 
     // implement the run function
     void run() {
-       
-        // run drive, multiplying distance by direction so we can go backwards if needed, get how far we actually drove
-        int driven = this->drive(this->direction * this->dist, false);
+        
+        // run drive, get how far we actually drove
+        int driven = this->drive(this->dir * this->dist, false);
 
         // calculate distance left to drive
         int shortfall = this->dist - driven;
@@ -59,13 +59,21 @@ class Line: public Leg {
         // now repeat this for rotation
         float rotated = this->rotate(this->endRot, false);
 
+        Serial.println(rotated);
+        Serial.print(" ");
+
         float rotShortfall = this->endRot - rotated;
+
+        Serial.println(rotShortfall);
 
         while (abs(rotShortfall) > ANGULARTOL && loopCount < MAXLOOPCOUNT) {
             Serial.println("Correcting rotation");
             rotated = this->rotate(rotShortfall, true);
             this->stop();
             rotShortfall = abs(rotShortfall) - rotated;
+            Serial.print(rotated);
+            Serial.print(" ");
+            Serial.println(rotShortfall);
             this->loopCount++;
         }
         this->loopCount = 0;
@@ -77,19 +85,22 @@ class Line: public Leg {
     // move the wheels the desired distance, and return the actual distance driven
     int drive(int d, bool correction) {
         Serial.print("Line ");
+        Serial.print(this->dir);
+        Serial.print(" ");
+        Serial.println(d);
 
         if (d == 0) {
             return 0;
         }
         
-        while(int avgD = averageDistance() <= abs(d)) {
+        while(averageDistance() <= abs(d)) {
             int spd;
 
-            // if in a correction, go slowly for more accuracy, else increase speed over course of a line
+            // if in a correction, go slowly for more accuracy
             if (correction) {
-                spd = DUALSPEED * 0.2;
+                spd = DUALSPEED * 0.1;
             } else {
-                spd = ramp(DUALSPEED, abs(d), avgD);
+                spd = DUALSPEED;
             }
 
             // Set both wheels to spin at the same rate

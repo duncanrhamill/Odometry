@@ -38,10 +38,7 @@ void setup() {
     delay(1000);
 
     // TESTING - loop through legs and run their action
-    //course.run();
-    
-    Circle c = Circle(150, 180, FORWARD, 0, false);
-    c.run();
+    course.run();
 
     // turn on for event
     //finished();
