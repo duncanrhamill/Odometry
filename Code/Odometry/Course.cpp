@@ -25,6 +25,8 @@ class Course {
       
         ServoSetup();
 
+        legs = new Leg*[13];
+
         /*
         * ---- THE LEG CODE ----
         * 
@@ -32,17 +34,17 @@ class Course {
         *      Line - Distance, Direction, Angle to turn at end, drop M&M
         *    Circle - Radius, angle to move through, direction, angle to turn at end, drop M&M 
         */
-        legs[0] = new Line(425, BACKWARD, 0, true);
-        legs[1] = new Line(355, BACKWARD,-37, false);
+        legs[0] = new Line(425, BACKWARD, 0, false);
+        legs[1] = new Line(455, BACKWARD,-37, false);
         legs[2] = new Circle(180, 260, FORWARD, 90, true);
-        legs[3] = new Line(170, BACKWARD, -40, false);
-        legs[4] = new Line(550, FORWARD, 40, true);
-        legs[5] = new Line(400, FORWARD,90, false);
-        legs[6] = new Line(400, FORWARD, 90, true);
-        legs[7] = new Line(400, FORWARD, 90, false);
+        legs[3] = new Line(170, BACKWARD, -35, false);
+        legs[4] = new Line(595, FORWARD, 36, true);
+        legs[5] = new Line(400, FORWARD, 87, false);
+        legs[6] = new Line(400, FORWARD, 84, true);
+        legs[7] = new Line(400, FORWARD, 84, false);
         legs[8] = new Line(660, FORWARD, -90, true);
-        legs[9] = new Circle(260, 90, FORWARD, -90, false);
-        legs[10] = new Line(500, BACKWARD, 90, false);
+        legs[9] = new Circle(260, 85, FORWARD, -85, false);
+        legs[10] = new Line(500, BACKWARD, 90, true);
         legs[11] = new Line(256, BACKWARD, 90, false);
         legs[12] = new Line(335, FORWARD, 143, false);
 

@@ -17,6 +17,12 @@ class Circle: public Leg {
     // loop counter to ensure we don't get stuck in a loop, distance the outer wheel has to rotate
     int loopCount, dir;
     float outerDist, innerDist;
+
+    int ramp(int Vm, int dist, int x) {
+        int offset = (2 * (float)m / dist)*(x - ((float)dist / 2));
+        int spd = m - abs(offset);
+        return spd;
+    }
   public:
     // radius of the circle, angular distance to travel, final rotation for next leg
     int radius, theta, endRot;
@@ -109,7 +115,7 @@ class Circle: public Leg {
         }
 
         // angular velocity from dual speed, with direction
-        float omega = ((float)DUALSPEED * 0.3 / (float)this->radius);
+        float omega = ((float)DUALSPEED * 0.4 / (float)this->radius);
 
         if (t < 0) {
             omega *= -1;

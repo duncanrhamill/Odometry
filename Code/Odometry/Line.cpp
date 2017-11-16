@@ -21,7 +21,6 @@ class Line: public Leg {
     int ramp(int m, int dist, int x) {
         int offset = (2 * (float)m / dist)*(x - ((float)dist / 2));
         int spd = m - abs(offset);
-        Serial.println(spd);
         return spd;
     }
 
@@ -40,11 +39,15 @@ class Line: public Leg {
 
     // implement the run function
     void run() {
+
+        if (this->dir == BACKWARD) {
+            this->dist *= 0.9;
+        }
         
         // run drive, get how far we actually drove
         int driven = this->drive(this->dir * this->dist, false);
 
-        /*// calculate distance left to drive
+        // calculate distance left to drive
         int shortfall = (this->dir * this->dist) - driven;
 
         shortfall *= 1.5;
@@ -59,7 +62,7 @@ class Line: public Leg {
             this->loopCount++;
             
         } 
-        this->loopCount = 0;*/
+        this->loopCount = 0;
 
         // now repeat this for rotation
         float rotated = this->rotate(this->endRot, false);
@@ -78,8 +81,7 @@ class Line: public Leg {
     }
 
     // move the wheels the desired distance, and return the actual distance driven
-    int drive(int d, bool correction) {
-      
+    int drive(int d, bool correction) {        
         Serial.print("Line ");
         Serial.print(this->dir);
         Serial.print(" ");
@@ -87,10 +89,6 @@ class Line: public Leg {
 
         if (d == 0) {
             return 0;
-        }
-
-        if (this->dir == BACKWARD) {
-            d *= 0.9;
         }
 
         int avgDist;
@@ -104,7 +102,7 @@ class Line: public Leg {
             if (correction) {
                 spd = DUALSPEED * 0.1;
             } else {
-                spd = 1 + ramp(2* DUALSPEED, abs(d), avgDist);
+                spd = 1 + ramp(DUALSPEED, abs(d), avgDist);
             }
 
             // Set both wheels to spin at the same rate

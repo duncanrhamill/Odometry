@@ -49,7 +49,6 @@ inline void resetEncoders() {
     Wire.write(CMD);
     Wire.write(CLEARENCODERREGISTERS);
     Wire.endTransmission();
-    delay(50);
 }
 
 // find the average distance travelled

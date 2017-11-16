@@ -37,7 +37,7 @@ void setup() {
     //l.run();
 
     // turn on for event
-    //finished();
+    finished();
 
 }
 
