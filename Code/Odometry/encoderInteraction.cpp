@@ -65,12 +65,4 @@ inline float averageDistance() {
     return ((distLeft + distRight)/ 2);
 }
 
-// turns out abs doesn't like floats
-/*inline float fabs(float f) {
-    if (f < 0) {
-        return -f;
-    }
-    return f;
-}*/
-
 #endif

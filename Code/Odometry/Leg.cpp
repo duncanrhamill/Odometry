@@ -32,11 +32,8 @@ class Leg
             return 0;
         }
 
-        // find distance needed to rotate
+        // find distance needed to rotate as an arc length of the required angle
         float dist = (2 * PI * WHEELDIST * ((float)fabs(t) / (float)360));
-
-        Serial.print("dist: ");
-        Serial.println(dist);
 
         // speeds of each wheel
         int leftWheel, rightWheel, rotateSpeed;
@@ -57,22 +54,8 @@ class Leg
             rightWheel = 128 + rotateSpeed;
         }
 
-        Serial.print("LeftWheel spd: ");
-        Serial.print((unsigned char)leftWheel, DEC);
-        Serial.print(", RightWheel spd: ");
-        Serial.println((unsigned char)rightWheel, DEC);
-
-        int avgD = averageDistance();
-
-        Serial.print("avg: ");
-        Serial.print(avgD);
-        
         // while we've not rotated less that the required distance
         while (averageDistance() <= dist) {
-            Serial.print("l: ");
-            Serial.print(individualDistance(ENCODELEFT));
-            Serial.print(", r: ");
-            Serial.println(individualDistance(ENCODERIGHT));
             
             // set wheels to spin at different speeds
             Wire.beginTransmission(MD25ADDR);
@@ -93,19 +76,18 @@ class Leg
             Wire.endTransmission();
         }
 
+        // get the average distance we travelled
         long avg = (long)averageDistance();
-        
+
+        // convert that to an angle
         float ang =((float)(360 * avg)/((float)(2 * PI * WHEELDIST)));
 
+        // negate it if we went backwards
         if (t < 0) {
             ang *= -1;
         }
 
-        Serial.print("Rotate t: ");
-        Serial.print(t);
-        Serial.print(", Actual t: ");
-        Serial.println(ang);
-
+        // reset encoders, stop, and delay slightly
         resetEncoders();
         this->stop();
         delay(50);

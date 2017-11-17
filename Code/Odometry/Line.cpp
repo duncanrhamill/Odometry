@@ -40,6 +40,7 @@ class Line: public Leg {
     // implement the run function
     void run() {
 
+        // empirical adjustment factor to account for backward overshoots
         if (this->dir == BACKWARD) {
             this->dist *= 0.9;
         }
@@ -50,6 +51,7 @@ class Line: public Leg {
         // calculate distance left to drive
         int shortfall = (this->dir * this->dist) - driven;
 
+        // empirical correction for the shortfall distances
         shortfall *= 1.5;
 
         // aim to get within LINEARTOL of the target waypoint, without going over MAXLOOPCOUNT
@@ -70,8 +72,6 @@ class Line: public Leg {
         float rotShortfall = this->endRot - rotated;
 
         while (fabs(rotShortfall) > ANGULARTOL && loopCount < MAXLOOPCOUNT) {
-            Serial.print("Correcting shortfall ");
-            Serial.println(rotShortfall);
             rotated = this->rotate(rotShortfall, true);
             this->stop();
             rotShortfall = rotShortfall - rotated;
@@ -82,16 +82,16 @@ class Line: public Leg {
 
     // move the wheels the desired distance, and return the actual distance driven
     int drive(int d, bool correction) {        
-        Serial.print("Line ");
-        Serial.print(this->dir);
-        Serial.print(" ");
-        Serial.println(d);
 
+        // if given zero distance don't actually drive anything
         if (d == 0) {
             return 0;
         }
 
+        // variable to hold average distance travelled
         int avgDist;
+
+        // reset the encoders to get an accurate reading
         resetEncoders();
         do {
             avgDist = averageDistance();
@@ -102,6 +102,7 @@ class Line: public Leg {
             if (correction) {
                 spd = DUALSPEED * 0.1;
             } else {
+                // set the speed to a ramp function, so we can correct for startup skew
                 spd = 1 + ramp(DUALSPEED, abs(d), avgDist);
             }
 
@@ -132,16 +133,12 @@ class Line: public Leg {
 
         // return the read distance
         int avg = averageDistance();
-        
-        Serial.print("Distance required: ");
-        Serial.print(d);
-        Serial.print(", Distance traveled: ");
-        Serial.println(avg);
 
+        // negate the distance if we were going backwards
         if (d < 0) {
             avg *= -1;
         }
-        
+
         resetEncoders();
         this->stop();
         delay(50);

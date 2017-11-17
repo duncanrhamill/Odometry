@@ -16,7 +16,7 @@
 class Circle: public Leg {
     // loop counter to ensure we don't get stuck in a loop, distance the outer wheel has to rotate
     int loopCount, dir;
-    float outerDist, innerDist;
+    float outerDist;
 
   public:
     // radius of the circle, angular distance to travel, final rotation for next leg
@@ -33,47 +33,33 @@ class Circle: public Leg {
         
         // compute the outerDist as 2*pi*(radius of circle + distance to outer wheel from center of robot)*(theta/360), and parse to int
         this->outerDist = (float)(2 * PI * (this->radius + WHEELDIST) * ((float)abs(this->theta) / 360));
-        
-        // similar procedure for innerDist, but subtract the wheel distance instead
-        this->innerDist = (float)(2 * PI * (this->radius - WHEELDIST) * ((float)abs(this->theta) / 360));
     }
 
     // implement the run function
     void run() {
-        Serial.print("Circle ");
-
-        Serial.print(this->radius);
-        Serial.print(" ");
-        Serial.print(this->outerDist);
-        Serial.print(" ");
-        Serial.print(this->innerDist);
-        Serial.print(" ");
-        
-        // drive round in a circle
+      
+        // set the robot to drive an arc in the specified direction, and at the given angle. Don't do corrective speeds
         float driven = this->drive(this->dir * this->theta, false);
-
-        Serial.println(driven);
-        Serial.print(" ");
 
         // get angular shortfall
         float angShortfall = (this->dir * this->theta) - driven;
 
-        Serial.println(angShortfall);
-        Serial.print(" ");
-
+        // call the drive function again with corrective speeds to solve any drive issues
         while (fabs(angShortfall) > ARCTOL && this->loopCount < MAXLOOPCOUNT) {
-            Serial.print(angShortfall);
-            Serial.print(" ");
             driven = this->drive(angShortfall, true);
             this->stop();
+
+            // subtract how far we moved from angShortfall so we get progressively closer to the target
             angShortfall = angShortfall - driven;
             this->loopCount++;
         }
+        // reset the loop counter
         this->loopCount = 0;
 
         // rotate to start of next leg
         float rotated = this->rotate(this->endRot, false);
 
+        // now correct rotation in a similar way to the arc drive
         float rotShortfall = this->endRot - rotated;
 
         while (fabs(rotShortfall) > ANGULARTOL && loopCount < MAXLOOPCOUNT) {
@@ -86,14 +72,17 @@ class Circle: public Leg {
         this->loopCount = 0;
     }
 
+    // function to drive in an arc
     float drive(float t, bool correction) {
+        // variables to store the encoders so we can drive clockwise and anti clockwise
         char innerWheel, outerWheel, innerSpeed, outerSpeed;
 
+        // if we're given a zero angle don't do any driving
         if (t == 0) {
             return 0;
         }
         
-        // reset outer distance to theta
+        // set outerDistance to the arclength for the required theta
         this->outerDist = (float)(2 * PI * (this->radius + WHEELDIST) * ((float)fabs(t) / 360));
 
         // if we're going forward, the left wheel is on the inside, else its the outside wheel
@@ -109,9 +98,10 @@ class Circle: public Leg {
             outerSpeed = SPEEDLEFT;
         }
 
-        // angular velocity from dual speed, with direction
+        // angular velocity from dual speed
         float omega = ((float)DUALSPEED * 0.5 / (float)this->radius);
 
+        // if have a negative angle, need to drive backward
         if (t < 0) {
             omega *= -1;
         }
@@ -121,21 +111,17 @@ class Circle: public Leg {
             omega *= 0.3;
         }
 
-        Serial.print("Omega: ");
-        Serial.println(omega);
-
+        // set an unsigned char storing the velocity of each wheel
         unsigned char outerVel = 128 + (this->radius + WHEELDIST) * omega;
         unsigned char innerVel = 128 + (this->radius - WHEELDIST) * omega;
 
-        Serial.print("outerVel: ");
-        Serial.print(outerVel, DEC);
-        Serial.print("innerVel: ");
-        Serial.println(innerVel, DEC);
-
+        // variable to store the distance moved by the outer wheel
         long outerDriven;
 
-        // loop through driving until one of the distances is over it's limit
+        // reset encoders so we have an accurate first reading.
         resetEncoders();
+        
+        // loop through driving until one of the outer distance is over it's limit
         do  {
             // Set wheels to spin at different rates
             Wire.beginTransmission(MD25ADDR);
@@ -159,20 +145,15 @@ class Circle: public Leg {
             
         } while (outerDriven <= this->outerDist);
 
-        Serial.print("OuterDist: ");
-        Serial.println(this->outerDist);
-        Serial.print("OuterDriven: ");
-        Serial.println(outerDriven);
         // get the angle driven through
         float ang = (float)(360 * outerDriven)/ (float)(2 * PI * (this->radius + WHEELDIST));
 
+        // if we were going to drive backwards negate the angle so correction doesn't go on for ever
         if (t < 0) {
             ang *= -1;
         }
 
-        Serial.print("ang: ");
-        Serial.println(ang);
-        
+        // reset the encoders, stop the robot, and return the angle traversed.
         resetEncoders();
         this->stop();
         return ang;

@@ -1,13 +1,14 @@
-\documentclass{article}
+\documentclass[landscape]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[a4paper, margin=2cm]{geometry}
 \usepackage{fancyhdr}
 \usepackage{lastpage}
 \usepackage{minted}
+\usepackage{multicol}
 
 \usemintedstyle{vs}
 
-\title{Aero Group A2-2 Odometry Code}
+\title{Aero Group A1-2 Odometry Code}
 
 \makeatletter
 \let\Title\@title
@@ -16,7 +17,7 @@
 \pagestyle{fancy}
 \lhead{}
 \rhead{}
-\rfoot{Page \textbf{\thepage} of \textbf{12}}
+\rfoot{Page \textbf{\thepage} of \textbf{10}}
 \renewcommand{\footrulewidth}{0.4pt}
 
 \renewcommand{\theFancyVerbLine}{\sffamily \textcolor[rgb]{0.5,0.5,1.0}{\normalsize\arabic{FancyVerbLine}}}
@@ -25,35 +26,42 @@
 
     \begin{center}
         \Large \textbf{\Title} \\[0.8cm]
-        \normalsize
+        \small
     \end{center}
+    \hrule
+
+    \setlength\columnsep{1cm}
+
+    \begin{multicols}{2}
 
     \subsection*{Odometry.ino - Arduino logic}
 
-    \inputminted[linenos]{cpp}{./Odometry/Odometry.ino}
+    \inputminted[linenos, breaklines, fontsize=\small]{cpp}{./Odometry/Odometry.ino}
 
     \subsection*{Course.cpp - Logic for completing the course}
 
-    \inputminted[linenos]{cpp}{./Odometry/Course.cpp}
+    \inputminted[linenos, breaklines, fontsize=\small]{cpp}{./Odometry/Course.cpp}
 
     \subsection*{Leg.cpp - defines code for completing a section of the course}
 
-    \inputminted[linenos]{cpp}{./Odometry/Leg.cpp}
+    \inputminted[linenos, breaklines, fontsize=\small]{cpp}{./Odometry/Leg.cpp}
 
     \subsection*{Line.cpp - logic for driving a straight line}
 
-    \inputminted[linenos]{cpp}{./Odometry/Line.cpp}
+    \inputminted[linenos, breaklines, fontsize=\small]{cpp}{./Odometry/Line.cpp}
 
     \subsection*{Circle.cpp - logic for driving an arc of the course}
 
-    \inputminted[linenos]{cpp}{./Odometry/Circle.cpp}
+    \inputminted[linenos, breaklines, fontsize=\small]{cpp}{./Odometry/Circle.cpp}
 
     \subsection*{encoderInteraction.cpp - functions for interacting with the MD25 encoders}
 
-    \inputminted[linenos]{cpp}{./Odometry/encoderInteraction.cpp}
+    \inputminted[linenos, breaklines, fontsize=\small]{cpp}{./Odometry/encoderInteraction.cpp}
 
     \subsection*{defines.h - header including all definitions}
 
-    \inputminted[linenos]{cpp}{./Odometry/defines.h}
+    \inputminted[linenos, breaklines, fontsize=\small]{cpp}{./Odometry/defines.h}
+
+    \end{multicols}
     
 \end{document}

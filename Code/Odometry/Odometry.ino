@@ -1,8 +1,10 @@
 /*
  *      Odometry Task - Aero 2 Group 2
  * 
+ *          16/11/2017
+ * 
  *          Code written by Duncan R Hamill - 28262174
- *          Tested & verified by Tom Griffiths - 28290771, Ali Hajizadah - 29053056, Robin Hannaford - , Felix Harris - 28611969
+ *          Tested & verified by Tom Griffiths - 28290771, Ali Hajizadah - 29053056, Robin Hannaford - 28331893, Felix Harris - 28611969
  * 
  *          All distances in mm, all angles in degrees
  */
@@ -30,13 +32,9 @@ void setup() {
     // wait a bit before we start
     delay(1000);
 
-    // TESTING - loop through legs and run their action
+    // go around the course
     course.run();
 
-    //Circle l = Circle(180, 270, BACKWARD, 0, true);
-    //l.run();
-
-    // turn on for event
     finished();
 
 }
